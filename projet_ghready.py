@@ -35,8 +35,6 @@ colors = {
 
 
 
-#just testing
-
 
 
 # Dessiner layout 
