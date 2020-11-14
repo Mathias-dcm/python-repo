@@ -453,7 +453,7 @@ def dtr_continue(df,value):
     dt_cv.fit(X_train,y_train)
     acc=r2_score(y_test, dt_cv.best_estimator_.predict(X_test))
     y_pre=dt_cv.best_estimator_.predict(X)
-    dict={'valeur réelle':y, 'valeur predict': y_pre}
+    dict={'valeur reel':y, 'valeur predict': y_pre}
     data_frame=pd.DataFrame(dict)
     return [acc, data_frame]
     
@@ -719,8 +719,8 @@ def update_output_dtr_graph(value1,contents,value2,filename):
             df=parse_contents(contents,filename) 
             if value1: 
                 data_frame=dtr_continue(df, value1)[1]
-                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                figu=html.Div(children=[dcc.Graph(figure=fig)])
+#                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
+                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
                                
     return figu
 
@@ -770,7 +770,7 @@ def update_output19(value1,contents,value2,filename):
                 data_frame=lin(df, value1)[1]
                 
   #              fig=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique"))])
+                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Regression"))])
          
                                
     return figu
@@ -792,7 +792,7 @@ def update_output29(value1,contents,value2,filename):
             df=parse_contents(contents,filename) 
             if value1: 
                 data_frame=gradient(df, value1)[1]
-                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
+                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB")
                 figu=html.Div(children=[dcc.Graph(figure=fig)])
                                
     return figu
