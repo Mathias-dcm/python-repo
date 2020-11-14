@@ -145,12 +145,13 @@ app.layout = html.Div([
         multi=True,
     
         className='stockselector',
-        value=['data']
+#        value=['data']
         ),
     
     html.Div(id='data'), 
     html.Div(id='acc'),
-    html.Div(id='dt_continue'),
+    html.Div(id='dtr_continue'),
+    html.Div(id='dtc_continue'),
     html.Div(id='neuron'),
     html.Div(id='gradient_class'),
     html.Div(id='adl'),
@@ -164,7 +165,7 @@ app.layout = html.Div([
     
    html.Div([ 
     
-     html.Div(id='graph3',),
+     html.Div(id='graph_PCA',),
     html.Div(id='graph',),
     html.Div(id='graph_c',),
     html.Div(id='graph1',),
@@ -470,7 +471,7 @@ def dtc_continue(df,value):
     
     params = {"max_depth": [3,6,9,12, None],
               "min_samples_leaf": np.arange(1,9,1),
-              "criterion": ["mse", "friedman_mse", "mae"]}
+              "criterion": ["gini", "entropy"]}
     X=df.drop(columns=[str(value)])
     X=pd.get_dummies(X)
     y=df[str(value)]
@@ -711,7 +712,7 @@ def update_table(contents, filename):
 
 def update_output_dtr_graph(value1,contents,value2,filename):
     figu=html.Div()
-    if str(value2)=="Decision tree regressor":
+    if "Decision tree Regressor" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
@@ -738,7 +739,7 @@ def update_output_dtr_graph(value1,contents,value2,filename):
 
 def update_output_dtc_graph(value1,contents,value2,filename):
     figu=html.Div()
-    if str(value2)=="Decision tree":
+    if "Decision tree" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
@@ -760,7 +761,7 @@ def update_output_dtc_graph(value1,contents,value2,filename):
 
 def update_output19(value1,contents,value2,filename):
     figu=html.Div()
-    if str(value2)=="Regression": 
+    if "Regression" in value2:   
         if contents:
             contents=contents[0]
             filename=filename[0]
