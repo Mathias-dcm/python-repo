@@ -409,7 +409,7 @@ def gradient(df,value):
     gb_cv=GridSearchCV(gb, params, cv=KFold(5), n_jobs=-1)
     gb_cv.fit(X_train,y_train)
     y_pre=gb_cv.best_estimator_.predict(X)
-    dict={'valeur reel':y, 'valeur predict': y_pre}
+    dict={'classe relle':y, 'classe predicte': y_pre}
     data_frame=pd.DataFrame(dict)
     score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
     return [score, data_frame]
@@ -727,29 +727,10 @@ def update_output_dtr_graph(value1,contents,value2,filename):
 
 
 
-# Arbre de decision : classifier
+# Arbre de decision : classifier (matrice de confusion)
 
 
 
-
-
-@app.callback(Output('graph_c', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
-              [State('upload-data', 'filename')])
-
-def update_output_dtc_graph(value1,contents,value2,filename):
-    figu=html.Div()
-    if "Decision tree" in value2:
-        if contents:
-            contents=contents[0]
-            filename=filename[0]
-            df=parse_contents(contents,filename) 
-            if value1: 
-                data_frame=dtc_continue(df, value1)[1]
-                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                figu=html.Div(children=[dcc.Graph(figure=fig)])
-                               
-    return figu
 
 
 # Regression
@@ -879,4 +860,4 @@ def callback13(value):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
