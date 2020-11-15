@@ -464,7 +464,7 @@ def dtr_continue(df,value):
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import make_scorer
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, accuracy_score
 scoring = make_scorer(r2_score)
 
 def dtc_continue(df,value):
@@ -477,18 +477,17 @@ def dtc_continue(df,value):
     y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeClassifier()
-    dt_cv=GridSearchCV(dt, params, cv=5, scoring=scoring, n_jobs=-1)
+    dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
-    acc=r2_score(y_test, dt_cv.best_estimator_.predict(X_test))
+    acc=accuracy_score(y_test, dt_cv.best_estimator_.predict(X_test))
     y_pre=dt_cv.best_estimator_.predict(X)
-    dict={'classe réelle':y, 'classe predicte': y_pre}
-    data_frame=pd.DataFrame(dict)
-    return [acc, data_frame]
+#    dict={'classe réelle':y, 'classe predicte': y_pre}
+#    data_frame=pd.DataFrame(dict)
+    return [acc]
 
 
 
-
-    
+     
     
     
 # Regression/reseau_neuronne/arbre_decision avec le meilleur parametre    
@@ -558,6 +557,7 @@ def update_output_dtc(value1,contents,value2,filename):
                                
      
     return children
+
 
 
 
