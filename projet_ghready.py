@@ -21,6 +21,8 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
+from time import time
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -170,6 +172,7 @@ app.layout = html.Div([
     html.Div(id='graph_c',),
     html.Div(id='graph1',),
     html.Div(id='graph2',),
+    html.Div(id='graph_adl')
     ],style={'width': '70%', 'display': 'inline-block', 'vertical-align': 'top'})
     
   
@@ -612,47 +615,6 @@ def update_output8(value1,contents,value2,filename):
     return children
 
 
-#ADL
-
-@app.callback(Output('adl', 'children'),
-              [Input('predire','value')],[Input('cible', 'value')] , [Input('upload-data', 'contents')],[Input('algo', 'value')],
-              [State('upload-data', 'filename')])
-
-def update_output_ADL(variables,vcible,contents,value2,filename):
-    children = html.Div()
-    if "Analyse Discriminante linéaire" in value2:
-        if contents:
-            contents=contents[0]
-            filename=filename[0]
-            df=parse_contents(contents,filename)
-            if variables: 
-                if vcible:
-                    y = df.loc[:,[str(vcible)]]
-                #X=df
-                #del X[value]
-                    X=df.loc[:,variables]
-                    XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
-                #XTrain = df.iloc[:,0:4]
-                #yTrain = df.iloc[:,4]
-                # X_train, X_test, y_train, y_test =train_test_split(X, y, test_size=0.3, stratify=y)
-                #instanciation
-                    lda = LinearDiscriminantAnalysis()
-                #apprentissage
-                    lda.fit(XTrain,yTrain)
-                #prediction
-                    ypred = lda.predict(XTest)
-                #matrice de confusion
-                    mc = metrics.confusion_matrix(yTest,ypred)
-                
-                
-                
-                    children=html.Div(["var : "+str(variables)+" _____ "+str(lda.coef_)+" ---- matrice de confusion : "+str(mc)+" ---- Taux d'erreur : "+str(1.0-metrics.accuracy_score(yTest,ypred))+" ---- Sensibilité (rappel) et précision par classe : "+str(metrics.classification_report(yTest,ypred))])
-     
-    return children
-
-
-
-
 
 
 
@@ -698,6 +660,81 @@ def update_table(contents, filename):
 
 
 # GRAPHE
+
+#ADL
+def calcul_adl(df,vcible,variables):
+    y = df.loc[:,[str(vcible)]]
+    X=df.loc[:,variables]
+    pd.get_dummies(X)
+    #découpage entrainement / test 
+    XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
+
+    #instanciation
+    lda = LinearDiscriminantAnalysis()
+    
+    start = time()
+    
+    #validation croisée 
+    scores = cross_val_score(lda, X, y, cv=5)
+    score_moyen = round(np.mean(scores),3)
+    #apprentissage
+    lda.fit(XTrain,yTrain)
+    
+    done = time()
+    tps = round(done - start,3)
+    
+    #prediction
+    ypred = lda.predict(XTest)
+    #matrice de confusion
+    mc = metrics.confusion_matrix(yTest,ypred)
+    
+    #calcul des métriques par classe 
+    met= metrics.classification_report(yTest,ypred,output_dict=True)
+    #calcul du taux d'erreur 
+    err = round(1-metrics.accuracy_score(yTest,ypred),3)
+    
+    #récupération des labels des classes 
+    catego=lda.classes_
+    
+    return mc, err,catego,met,score_moyen,tps
+
+
+@app.callback(Output('graph_adl', 'children'),
+              [Input('predire','value')],[Input('cible', 'value')] , [Input('upload-data', 'contents')],[Input('algo', 'value')],
+              [State('upload-data', 'filename')])
+
+def update_sortie_adl(variables,vcible,contents,value2,filename):
+    figu=html.Div()
+    if "Analyse Discriminante linéaire" in value2:
+        if contents and variables:
+            contents=contents[0]
+            filename=filename[0]
+    
+            df=parse_contents(contents,filename)
+            table,err,catego,met,score_moyen,tps =calcul_adl(df, vcible, variables)
+            #test=""
+            #for cat in catego:
+             #   test=test+str(met[cat]["precision"])
+             
+            #récupération de la précision et du rappel par classe dans un vecteur
+            met_classe=[]
+            for cat in catego:
+                met_classe.append(met[cat]["precision"])
+                met_classe.append(met[cat]["recall"])
+            
+            met_classe=np.array(met_classe)
+            #transformation du vecteur en matrice 
+            met_classe=met_classe.reshape(len(catego),2)
+            
+            fig=px.imshow(table,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Analyse Discriminante Linéaire : Matrice de confusion")
+            fig2=px.imshow(met_classe,x=["précision","rappel"],y=catego,color_continuous_scale="Tealgrn",title="Analyse Discrimante Linéaire : Indicateurs par classe ")
+            
+           # figu=html.Div(children=["Analyse Discriminante Linéaire",dcc.Graph(id='figadl', figure=fig), "acc : "+str(acc)+"---test : "+str(met_classe)+"------ "+str(met),dcc.Graph(id='figadl2', figure=fig2)])
+            figu=html.Div(children=["Analyse Discriminante Linéaire",dcc.Graph(id='figadl', figure=fig), "Taux d'erreur : ",str(err),html.Br(),"Score moyen : ",str(score_moyen),html.Br(),"Temps de calcul : ",str(tps),dcc.Graph(id='figadl2', figure=fig2)])
+         
+                               
+    return figu
+
 
 
 # Arbre de decision : regressor
@@ -860,4 +897,5 @@ def callback13(value):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
+    
