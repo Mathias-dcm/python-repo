@@ -151,13 +151,8 @@ app.layout = html.Div([
         ),
     
     html.Div(id='data'), 
-    html.Div(id='acc'),
-    html.Div(id='dtr_continue'),
-    html.Div(id='dtc_continue'),
-    html.Div(id='neuron'),
-    html.Div(id='gradient_class'),
-    html.Div(id='adl'),
-    html.Div(id='ensemble'),
+    html.Div(id='graph_PCA',),
+    
     
    
    
@@ -166,13 +161,36 @@ app.layout = html.Div([
     
     
    html.Div([ 
+       
+       
+       #Création d'onglets pour afficher les résultats des différentes méthodes 
+       html.Div(id='div_onglets', className='control-tabs', children=[
+            dcc.Tabs(id='tabs_onglets', value='tabs', children=[
+            dcc.Tab(id='tab1', value='tab-1'),
+            dcc.Tab(id="tab2", value='tab-2'),
+            dcc.Tab(id="tab3", value='tab-3'),
+            ]),
+            #On inclut tous les éléments graphiques dont on a besoin 
+            html.Div(id='onglets_content',children=[
+                
+                html.Div(id='acc'),
+                html.Div(id='dtr_continue'),
+                html.Div(id='dtc_continue'),
+                html.Div(id='neuron'),
+                html.Div(id='gradient_class'),
+                html.Div(id='adl'),
+                html.Div(id='ensemble'),
+              
+                  html.Div(id='graph',),
+                  html.Div(id='graph_c',),
+                  html.Div(id='graph1',),
+                  html.Div(id='graph2',),
+                  html.Div(id='graph_adl')
+                ])
+        
+            ]),
     
-     html.Div(id='graph_PCA',),
-    html.Div(id='graph',),
-    html.Div(id='graph_c',),
-    html.Div(id='graph1',),
-    html.Div(id='graph2',),
-    html.Div(id='graph_adl')
+    
     ],style={'width': '70%', 'display': 'inline-block', 'vertical-align': 'top'})
     
   
@@ -181,6 +199,80 @@ app.layout = html.Div([
    )
 
 
+#Affichage du contenu spécifique à chaque onglet 
+@app.callback(Output('onglets_content', 'children'),
+              [Input('tabs_onglets', 'value')])
+
+def update_content_ongglets(tab):
+    if tab == 'tab-1':
+        return html.Div([
+            html.Div(id='acc'),
+            html.Div(id='graph_c',),
+            html.Div(id='graph1',),
+           
+    
+        ])
+    elif tab=="tab-2":
+        return html.Div([
+            html.Div(id='dtr_continue'),
+            html.Div(id='dtc_continue'),
+            html.Div(id='graph',)
+            ])
+    elif tab == 'tab-3':
+        return html.Div([
+            html.Div(id='graph_adl'),
+             html.Div(id='neuron'),
+             html.Div(id='graph2',)
+        ])
+
+
+#Modification du label de chaque onglet en fonction du type de la variable cible 
+@app.callback(Output('tab1', 'label'),
+              [Input('cible', 'value')], [Input('upload-data', 'contents')],
+              [State('upload-data', 'filename')])
+
+def update_label_tab1(cible,contents,filename):
+    if contents:
+        contents = contents[0]
+        filename = filename[0]
+        df = parse_contents(contents, filename)
+        if cible:
+            type_var=QT_function0(df,cible)
+            if "Qualitative" in type_var:
+                return "Régression logistique" 
+            else :
+                return "Régression" #D T classifier #adl   #reg  SGB  DT regressor 
+    return "Méthode 1"
+
+@app.callback(Output('tab2', 'label'),
+              [Input('cible', 'value')], [Input('upload-data', 'contents')],
+              [State('upload-data', 'filename')])
+
+def update_label_tab2(cible,contents,filename):
+    if contents:
+        contents = contents[0]
+        filename = filename[0]
+        df = parse_contents(contents, filename)
+        if cible:
+            return "Arbre de décision" 
+    return "Méthode 2"
+
+@app.callback(Output('tab3', 'label'),
+              [Input('cible', 'value')], [Input('upload-data', 'contents')],
+              [State('upload-data', 'filename')])
+
+def update_label_tab3(cible,contents,filename):
+    if contents:
+        contents = contents[0]
+        filename = filename[0]
+        df = parse_contents(contents, filename)
+        if cible:
+            type_var=QT_function0(df,cible)
+            if "Qualitative" in type_var:
+                return "Analyse Discriminante Linéaire" 
+            else :
+                return "SGB" 
+    return "Méthode 3"
 
 
 
@@ -306,8 +398,8 @@ def update_output1(contents, filename):
         contents = contents[0]
         filename = filename[0]
         df = parse_contents(contents, filename)
-        options=[{'label':name, 'value': name} for name in df.columns.tolist()]+[{'label':'data', 
-                                                                                  'value':'data'}]
+        options=[{'label':name, 'value': name} for name in df.columns.tolist()]#+[{'label':'data', 
+                                                                                 # 'value':'data'}]
     return options
     
 
@@ -616,6 +708,43 @@ def update_output8(value1,contents,value2,filename):
 
 
 
+#Calcul ADL 
+
+def calcul_adl(df,vcible,variables):
+    y = df.loc[:,[str(vcible)]]
+    X=df.loc[:,variables]
+    pd.get_dummies(X)
+    #découpage entrainement / test 
+    XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
+
+    #instanciation
+    lda = LinearDiscriminantAnalysis()
+    
+    start = time()
+    
+    #validation croisée 
+    scores = cross_val_score(lda, X, y, cv=5)
+    score_moyen = round(np.mean(scores),3)
+    #apprentissage
+    lda.fit(XTrain,yTrain)
+    
+    done = time()
+    tps = round(done - start,3)
+    
+    #prediction 
+    ypred = lda.predict(XTest)
+    #matrice de confusion
+    mc = metrics.confusion_matrix(yTest,ypred)
+    
+    #calcul des métriques par classe 
+    met= metrics.classification_report(yTest,ypred,output_dict=True)
+    #calcul du taux d'erreur 
+    err = round(1-metrics.accuracy_score(yTest,ypred),3)
+    
+    #récupération des labels des classes 
+    catego=lda.classes_
+    
+    return mc, err,catego,met,score_moyen,tps
 
 
 
@@ -662,41 +791,6 @@ def update_table(contents, filename):
 # GRAPHE
 
 #ADL
-def calcul_adl(df,vcible,variables):
-    y = df.loc[:,[str(vcible)]]
-    X=df.loc[:,variables]
-    pd.get_dummies(X)
-    #découpage entrainement / test 
-    XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
-
-    #instanciation
-    lda = LinearDiscriminantAnalysis()
-    
-    start = time()
-    
-    #validation croisée 
-    scores = cross_val_score(lda, X, y, cv=5)
-    score_moyen = round(np.mean(scores),3)
-    #apprentissage
-    lda.fit(XTrain,yTrain)
-    
-    done = time()
-    tps = round(done - start,3)
-    
-    #prediction
-    ypred = lda.predict(XTest)
-    #matrice de confusion
-    mc = metrics.confusion_matrix(yTest,ypred)
-    
-    #calcul des métriques par classe 
-    met= metrics.classification_report(yTest,ypred,output_dict=True)
-    #calcul du taux d'erreur 
-    err = round(1-metrics.accuracy_score(yTest,ypred),3)
-    
-    #récupération des labels des classes 
-    catego=lda.classes_
-    
-    return mc, err,catego,met,score_moyen,tps
 
 
 @app.callback(Output('graph_adl', 'children'),
@@ -730,7 +824,7 @@ def update_sortie_adl(variables,vcible,contents,value2,filename):
             fig2=px.imshow(met_classe,x=["précision","rappel"],y=catego,color_continuous_scale="Tealgrn",title="Analyse Discrimante Linéaire : Indicateurs par classe ")
             
            # figu=html.Div(children=["Analyse Discriminante Linéaire",dcc.Graph(id='figadl', figure=fig), "acc : "+str(acc)+"---test : "+str(met_classe)+"------ "+str(met),dcc.Graph(id='figadl2', figure=fig2)])
-            figu=html.Div(children=["Analyse Discriminante Linéaire",dcc.Graph(id='figadl', figure=fig), "Taux d'erreur : ",str(err),html.Br(),"Score moyen : ",str(score_moyen),html.Br(),"Temps de calcul : ",str(tps),dcc.Graph(id='figadl2', figure=fig2)])
+            figu=html.Div(children=[html.H6("Temps de calcul : "+str(tps)),html.H6("Score moyen : "+str(score_moyen)),dcc.Graph(id='figadl', figure=fig),"Taux d'erreur : ",str(err),dcc.Graph(id='figadl2', figure=fig2)])
          
                                
     return figu
