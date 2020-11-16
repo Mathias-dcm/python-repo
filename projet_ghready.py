@@ -182,7 +182,7 @@ app.layout = html.Div([
                 html.Div(id='ensemble'),
               
                   html.Div(id='graph',),
-                  html.Div(id='graph_c',),
+                  html.Div(id='graph_dtc',),
                   html.Div(id='graph1',),
                   html.Div(id='graph2',),
                   html.Div(id='graph_adl')
@@ -207,7 +207,7 @@ def update_content_ongglets(tab):
     if tab == 'tab-1':
         return html.Div([
             html.Div(id='acc'),
-            html.Div(id='graph_c',),
+            html.Div(id='graph_dtc',),
             html.Div(id='graph1',),
            
     
@@ -582,6 +582,9 @@ def dtc_continue(df,value):
 
 
 
+
+
+
      
     
     
@@ -648,7 +651,7 @@ def update_output_dtc(value1,contents,value2,filename):
             df=parse_contents(contents,filename) 
             
             if value1:
-                children=html.Div(["R square of Decision Tree Classifier =",  str(dtc_continue(df, value1)[0])]) 
+                children=html.Div(["Accuracy of Decision Tree Classifier =",  str(dtc_continue(df, value1)[0])]) 
                                
      
     return children
