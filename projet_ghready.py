@@ -154,9 +154,10 @@ app.layout = html.Div([
 #        value=['data']
         ),
     
-    html.Div(id='data'), 
+    html.Div(id='tabletype'),
+    html.Div(id='data'),
     html.Div(id='graph_PCA',),
-    
+
     
    
    
@@ -283,6 +284,23 @@ def update_label_tab3(cible,contents,filename):
 
 
 
+# Fonction qui détermine les variables qualitatives/quantitatives du CIBLE
+
+
+def QT_function0(df,value):
+    out=[]
+    if str(df.dtypes[str(value)])=='object':
+        out="Qualitative"
+    else:
+        if (len(np.unique(df[str(value)]))<6):
+            out="Qualitative"
+        else:
+            out="Quantitative"
+    return [str(out)]
+
+
+
+
 #Chargement du fichier 
 def parse_contents(contents, filename):
     content_type, content_string = contents.split(',')
@@ -300,23 +318,39 @@ def parse_contents(contents, filename):
         print(e)
         return html.Div([
             'There was an error processing this file.'
-        ])
-
+                        ]),
     return df
+
+######################## AFFICHER LA TABLE DE TYPE #####################################
         
+"""
+@app.callback(Output('tabletype', 'children'),
+              [Input('cible', 'value')],[Input('upload-data', 'contents')],
+              [State('upload-data', 'filename')])
+def tabletype(value,contents,filename):
+    if contents:
+        contents = contents[0]
+        filename = filename[0]
+        df = parse_contents(contents, filename)
+        typelist=list()
+        #collist=list(df.columns)
+        for col in df:
+            typevalue=QT_function0(df,col)
+            typelist.append(typevalue)
+    #collist=tuple(collist)    
+    #typelist=tuple(typelist)
+    #listfinal=np.column_stack((collist))
+        dftype=pd.DataFrame(typelist,columns=['Nom de Variable','Type de Variable'])
+        return html.Div([
+                        dash_table.DataTable(
+                                id='type',
+                                data=dftype.to_dict('records'),
+                                columns=[{'name': i, 'id': i} for i in dftype.columns]
+            )])
 
 
-# Fonction qui détermine les variables qualitatives/quantitatives du CIBLE
+"""
 
-
-def QT_function0(df,value):
-    out=[]
-    if str(df.dtypes[str(value)])=='object':
-        out="Qualitative"
-    else:
-        out="Quantitative"
-    
-    return [str(out)]
 
 
 @app.callback(Output('pre_algo', 'options'),
@@ -337,7 +371,7 @@ def update_output(value, contents,filename):
 
 
 
-
+################ PRPOSE ALGO POUR CHAQUE VARIABLE ############################
 
 
 def QT_function(value):
@@ -369,24 +403,6 @@ def update_output00(value):
         out=QT_function(str(value))
         options=[{'label':name, 'value': name}  for name in out]
     return options
-
-
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -459,7 +475,10 @@ def update_output2(contents, value,filename):
 
 
 
-# REGRESSION LINEAIRE 
+##############################################################################
+###########################REGRESSION LINEAIRE #############################
+##############################################################################
+
 
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import accuracy_score
@@ -532,7 +551,10 @@ def gradient(df,value,variables):
 
 
 
-# DECISION TREE REGRESSION
+##############################################################################
+########################### DECISION TREE ####################################
+##############################################################################
+
 
 
 
@@ -722,7 +744,7 @@ def update_output8(value1,variables,contents,value2,filename):
 
 
 ##############################################################################
-###########################REGRESSION LOGISTIQUE #############################
+#####################          REGRESSION LOGISTIQUE       ###################
 ##############################################################################
 
 
@@ -909,7 +931,9 @@ html.Div(children=f"Score = {score}", style={
 }),
 """
 
-#Calcul ADL 
+##############################################################################
+###########################           ADL        #############################
+##############################################################################
 
 def calcul_adl(df,vcible,variables):
     y = df.loc[:,[str(vcible)]]
