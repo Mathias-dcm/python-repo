@@ -20,7 +20,11 @@ import plotly.graph_objects as go
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
-
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_curve, roc_auc_score 
+import plotly.figure_factory as ff
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
 from time import time
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -185,7 +189,8 @@ app.layout = html.Div([
                   html.Div(id='graph_dtc',),
                   html.Div(id='graph1',),
                   html.Div(id='graph2',),
-                  html.Div(id='graph_adl')
+                  html.Div(id='graph_adl'),
+                  html.Div(id='reglog')
                 ])
         
             ]),
@@ -204,11 +209,13 @@ app.layout = html.Div([
               [Input('tabs_onglets', 'value')])
 
 def update_content_ongglets(tab):
+    
     if tab == 'tab-1':
         return html.Div([
             html.Div(id='acc'),
             html.Div(id='graph_dtc',),
             html.Div(id='graph1',),
+            html.Div(id='reglog'),
            
     
         ])
@@ -464,12 +471,13 @@ import numpy as np
 
 # recherche hyperparametre
 
-def lin(df,value):
+def lin(df,value,variables):
     c_space = np.logspace(-4, 0, 20)
     params = {'alpha': c_space}
-    df_bis=pd.get_dummies(df)
-    X=df_bis.drop(columns=[str(value)])
-    y=df_bis[str(value)]
+#    df_bis=pd.get_dummies(df)
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     linear=Ridge(normalize=True)
     linear_cv=GridSearchCV(linear, params, cv=5)
@@ -493,18 +501,19 @@ def lin(df,value):
 from sklearn.ensemble import GradientBoostingRegressor
 
 # Instantiate gb
-def gradient(df,value):
+def gradient(df,value,variables):
     params={'n_estimators':[16,32,64,100,200], 'learning_rate':[0.25,0.1,0.05,0.025],
             'max_depth':[1,2,4,8], 'subsample': [0.5,0.9,1], 'max_features':[0.5,0.75]}
     gb = GradientBoostingRegressor()
-    df_bis=pd.get_dummies(df)
-    X=df_bis.drop(columns=[str(value)])
-    y=df_bis[str(value)]
+ 
+    df_bis=df.iloc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     gb_cv=GridSearchCV(gb, params, cv=KFold(5), n_jobs=-1)
     gb_cv.fit(X_train,y_train)
     y_pre=gb_cv.best_estimator_.predict(X)
-    dict={'classe relle':y, 'classe predicte': y_pre}
+    dict={'classe reel':y, 'classe predict': y_pre}
     data_frame=pd.DataFrame(dict)
     score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
     return [score, data_frame]
@@ -534,14 +543,15 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import r2_score
 scoring = make_scorer(r2_score)
 
-def dtr_continue(df,value):
+def dtr_continue(df,value, variables):
     
     params = {"max_depth": [3,6,9,12, None],
               "min_samples_leaf": np.arange(1,9,1),
               "criterion": ["mse", "friedman_mse", "mae"]}
-    df_bis=pd.get_dummies(df)
-    X=df_bis.drop(columns=[str(value)])
-    y=df_bis[str(value)]
+   
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeRegressor()
     dt_cv=GridSearchCV(dt, params, cv=5, scoring=scoring, n_jobs=-1)
@@ -562,13 +572,13 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import r2_score, accuracy_score
 scoring = make_scorer(r2_score)
 
-def dtc_continue(df,value):
+def dtc_continue(df,value,variables):
     
     params = {"max_depth": [3,6,9,12, None],
               "min_samples_leaf": np.arange(1,9,1),
               "criterion": ["gini", "entropy"]}
-    X=df.drop(columns=[str(value)])
-    X=pd.get_dummies(X)
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
     y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeClassifier()
@@ -613,18 +623,20 @@ def dtc_continue(df,value):
 
 
 @app.callback(Output('acc', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
+              [Input('cible', 'value')],[Input('predire', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output5(value1,contents,value2,filename):
+def update_output5(value1,variables,contents,value2,filename):
     children = html.Div()
+    
     if "Regression" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
             df=parse_contents(contents,filename)
             if value1:
-                children=html.Div(["R square of Regression =",  str(lin(df,value1)[0])])
+                if variables:
+                    children=html.Div(["R square of Regression =",  str(lin(df,value1, variables)[0])])
      
     return children
 
@@ -651,7 +663,7 @@ def update_output_dtc(value1,contents,value2,filename):
             df=parse_contents(contents,filename) 
             
             if value1:
-                children=html.Div(["Accuracy of Decision Tree Classifier =",  str(dtc_continue(df, value1)[0])]) 
+                children=html.Div(["Accuracy_score of Decision Tree Classifier =",  str(dtc_continue(df, value1)[0])]) 
                                
      
     return children
@@ -664,10 +676,10 @@ def update_output_dtc(value1,contents,value2,filename):
 # Decision tree regressor
 
 @app.callback(Output('dtr_continue', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_dtr(value1,contents,value2,filename):
+def update_output_dtr(value1,variables,contents,value2,filename):
     
     children = html.Div()
     if "Decision tree Regressor" in value2:
@@ -677,7 +689,8 @@ def update_output_dtr(value1,contents,value2,filename):
             df=parse_contents(contents,filename) 
             
             if value1:
-                children=html.Div(["R square of Decision Tree Regressor =",  str(dtr_continue(df, value1)[0])]) 
+                if variables:
+                    children=html.Div(["R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])]) 
                                
      
     return children
@@ -692,10 +705,10 @@ def update_output_dtr(value1,contents,value2,filename):
 
 
 @app.callback(Output('neuron', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output8(value1,contents,value2,filename):
+def update_output8(value1,variables,contents,value2,filename):
     
     children = html.Div()
     if "SGB" in value2:
@@ -704,10 +717,189 @@ def update_output8(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1:
-                children=html.Div(["R square of Gradient boosting =",  str(gradient(df, value1)[0])]) 
+                if variables:
+                    children=html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])]) 
                                
      
     return children
+
+
+##############################################################################
+###########################REGRESSION LOGISTIQUE #############################
+##############################################################################
+
+
+#Stocker le resultat de matric confusion dans un tableau 
+
+def report_to_df(report):
+    report = [x.split(' ') for x in report.split('\n')]
+    header = ['Class Name']+['Précision']+['Sensiblité']+['F1']+['Fréquence']
+    values = []
+    for row in report[1:-5]:
+        row = [value for value in row if value!='']
+        if row!=[]:
+            values.append(row)
+    df = pd.DataFrame(data = values, columns = header)
+    return df
+
+
+@app.callback(Output('reglog', 'children'),
+              [Input('predire','value')],[Input('cible', 'value')] , [Input('upload-data', 'contents')],[Input('algo', 'value')],
+              [State('upload-data', 'filename')])
+
+def update_output_RL(variables,vcible,contents,value2,filename):
+    children = html.Div()
+    if "regression logistique" in value2:
+        if contents:
+            contents=contents[0]
+            filename=filename[0]
+            df=parse_contents(contents,filename)
+            if variables: 
+                if vcible:
+                    start=time()
+                    y = y=df[str(vcible)]
+                    X=df.loc[:,variables]
+                    param_grid = [    
+                                {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
+                                 'C' : np.logspace(-4, 4, 20),
+                                 'solver' : ['lbfgs','newton-cg','liblinear','sag','saga'],
+                                 'max_iter' : [100, 1000,2500, 5000]
+                                 }
+                                ]
+                    # split X and y into training and testing sets
+                    X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=0)
+
+                    # instantiate the model (using the default parameters)
+                    logreg = LogisticRegression(multi_class="multinomial")
+                    
+                    #Hyperparametre
+                    clf = GridSearchCV(logreg, param_grid = param_grid, cv = 3, verbose=True, n_jobs=-1)
+                    
+                    clf.fit(X_train,y_train)
+                    acc=accuracy_score(y_test, clf.best_estimator_.predict(X_test))
+                    y_pred=clf.best_estimator_.predict(X_test)
+                    y_pred_proba = clf.best_estimator_.predict_proba(X_test)[::,1]
+                    y_scores=clf.best_estimator_.predict_proba(X_test)
+                    # import the metrics class
+                    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+                    confusion_matrix = pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted'])
+                    
+                    """
+                    fig = px.area(
+                    x=fpr, y=tpr,
+                    title='ROC Curve (AUC={auc(fpr, tpr):.4f})',
+                    labels=dict(x='False Positive Rate', y='True Positive Rate'),
+                        width=700, height=500
+                        )
+                    """
+                    
+                    # Evaluating model performance at various thresholds
+                    
+                   
+                    
+                    if y_scores.shape[1]>2:
+                    
+                    #fig=plt.plot(fpr,tpr,label="data 1, auc="+str(auc))
+                    #fig=sn.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+                    #fig=sn.heatmap(confusion_matrix, annot=True)
+                        y_scores=clf.best_estimator_.predict_proba(X_test)
+                        y_onehot = pd.get_dummies(y_test, columns=clf.best_estimator_.classes_)
+
+                    # Create an empty figure, and iteratively add new lines
+                    # every time we compute a new class
+                        fig_ROC = go.Figure()
+                        fig_ROC.add_shape(
+                                    type='line', line=dict(dash='dash'),
+                                    x0=0, x1=1, y0=0, y1=1
+                                    )       
+                    
+                        for i in range(y_scores.shape[1]):
+                            y_true = y_onehot.iloc[:, i]
+                            y_score = y_scores[:, i]
+
+                            fpr, tpr, _ = roc_curve(y_true, y_score)
+                            auc_score = roc_auc_score(y_true, y_score)
+
+                            name = f"{y_onehot.columns[i]} (AUC={auc_score:.2f})"
+                            fig_ROC.add_trace(go.Scatter(x=fpr, y=tpr, name=name, mode='lines'))
+
+                        fig_ROC.update_layout(
+                                        xaxis_title='False Positive Rate',
+                                        yaxis_title='True Positive Rate',
+                                        yaxis=dict(scaleanchor="x", scaleratio=1),
+                                        xaxis=dict(constrain='domain'),
+                                        width=700, height=500
+                                        )
+                        fig_thresh=go.Figure()
+                    else:
+                         auc = metrics.roc_auc_score(y_test, y_pred_proba)
+                         fpr, tpr, thresholds = metrics.roc_curve(y_test,  y_pred_proba)
+                         df1 = pd.DataFrame({
+                                        'False Positive Rate': fpr,
+                                        'True Positive Rate': tpr
+                                        }, index=thresholds)
+                         df1.index.name = "Thresholds"
+                         df1.columns.name = "Rate"
+                         fig_ROC = px.area(
+                                            x=fpr, y=tpr,
+                                            title=f'Courbe de ROC (AUC={auc})',
+                                            labels=dict(x='False Positive Rate', y='True Positive Rate'),
+                                            width=500, height=500
+                                            ) 
+                         fig_ROC.add_shape(
+                                type='line', line=dict(dash='dash'),
+                                x0=0, x1=1, y0=0, y1=1
+                              )
+                         fig_thresh = px.line(
+                                    df1, title='TPR and FPR at every threshold',
+                                    width=700, height=500
+                                    )
+                         fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
+                         fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
+                         
+                          
+                    indice=metrics.classification_report(y_test,y_pred)
+                    indice=report_to_df(indice)
+                    fig_hist = px.histogram(
+                                            x=y_pred_proba, color=y_test, nbins=50,
+                                            labels=dict(color='True Labels', x='Score')
+                                            )
+                    #Matrice de confusion
+                    """
+                    fig_matcon=plt.figure()
+                    fig_matcon.add_subplot(111)
+                    sn.heatmap(cnf_matrix,annot=True,square=True,cbar=False,fmt="d")
+                    plt.xlabel("predicted")
+                    plt.ylabel("true")
+                    """
+                    catego=clf.classes_
+                    #fig_matcon=ff.create_annotated_heatmap(cnf_matrix)
+                    fig_matcon=px.imshow(cnf_matrix,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Analyse Discriminante Linéaire : Matrice de confusion")
+                    end=time()
+                    duration=(end-start)
+                    return html.Div([
+                                   html.H1(
+                                               children=f"Temps de calcul = {duration}",
+                                               style={
+                                                       'textAlign': 'center',
+                                                       'color': colors['text']
+                                                       }
+                                                       ),
+                                   html.Div(children=f"Taux d'erreur = {1-acc}", style={
+                                                       'textAlign': 'center',
+                                                       'color': colors['text']
+                                                       }),
+                                   html.Div([dash_table.DataTable(id='data-table',
+                                                                   #title= f'Evaluation(Taux d''erreur={acc})',
+                                                                   columns=[{"name": i, "id": i} for i in indice.columns],
+                                                                   data=indice.to_dict('rows'),
+                                                                   editable=True
+                                                                   )]),
+                                    html.Div([dcc.Graph(id='MaCo', figure=fig_matcon)]),
+                                    html.Div([dcc.Graph(id='ROC', figure=fig_ROC)]),
+                                    html.Div([dcc.Graph(id='Hist', figure=fig_hist)]),
+                                    html.Div([dcc.Graph(id='Thresh', figure=fig_thresh)]) 
+                                    ])
 
 
 
@@ -841,10 +1033,10 @@ def update_sortie_adl(variables,vcible,contents,value2,filename):
 
 
 @app.callback(Output('graph', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_dtr_graph(value1,contents,value2,filename):
+def update_output_dtr_graph(value1,variables,contents,value2,filename):
     figu=html.Div()
     if "Decision tree Regressor" in value2:
         if contents:
@@ -852,9 +1044,10 @@ def update_output_dtr_graph(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1: 
-                data_frame=dtr_continue(df, value1)[1]
+                if variables:
+                    data_frame=dtr_continue(df, value1, variables)[1]
 #                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
+                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
                                
     return figu
 
@@ -871,10 +1064,10 @@ def update_output_dtr_graph(value1,contents,value2,filename):
 
 
 @app.callback(Output('graph1', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output19(value1,contents,value2,filename):
+def update_output19(value1,variables,contents,value2,filename):
     figu=html.Div()
     if "Regression" in value2:   
         if contents:
@@ -882,10 +1075,11 @@ def update_output19(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1: 
-                data_frame=lin(df, value1)[1]
+                if variables:
+                    data_frame=lin(df, value1, variables)[1]
                 
   #              fig=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Regression"))])
+                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Regression"))])
          
                                
     return figu
@@ -895,10 +1089,10 @@ def update_output19(value1,contents,value2,filename):
 
 
 @app.callback(Output('graph2', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output29(value1,contents,value2,filename):
+def update_output29(value1,variables,contents,value2,filename):
     figu=html.Div()
     if str(value2)=="SGB":
         if contents:
@@ -906,9 +1100,10 @@ def update_output29(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1: 
-                data_frame=gradient(df, value1)[1]
-                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB")
-                figu=html.Div(children=[dcc.Graph(figure=fig)])
+                if variables:
+                    data_frame=gradient(df, value1)[1]
+#                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB")
+                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
                                
     return figu
 
