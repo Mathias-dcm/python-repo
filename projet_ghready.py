@@ -209,6 +209,7 @@ app.layout = html.Div([
               [Input('tabs_onglets', 'value')])
 
 def update_content_ongglets(tab):
+    
     if tab == 'tab-1':
         return html.Div([
             html.Div(id='acc'),
@@ -470,12 +471,13 @@ import numpy as np
 
 # recherche hyperparametre
 
-def lin(df,value):
+def lin(df,value,variables):
     c_space = np.logspace(-4, 0, 20)
     params = {'alpha': c_space}
-    df_bis=pd.get_dummies(df)
-    X=df_bis.drop(columns=[str(value)])
-    y=df_bis[str(value)]
+#    df_bis=pd.get_dummies(df)
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     linear=Ridge(normalize=True)
     linear_cv=GridSearchCV(linear, params, cv=5)
@@ -499,18 +501,19 @@ def lin(df,value):
 from sklearn.ensemble import GradientBoostingRegressor
 
 # Instantiate gb
-def gradient(df,value):
+def gradient(df,value,variables):
     params={'n_estimators':[16,32,64,100,200], 'learning_rate':[0.25,0.1,0.05,0.025],
             'max_depth':[1,2,4,8], 'subsample': [0.5,0.9,1], 'max_features':[0.5,0.75]}
     gb = GradientBoostingRegressor()
-    df_bis=pd.get_dummies(df)
-    X=df_bis.drop(columns=[str(value)])
-    y=df_bis[str(value)]
+ 
+    df_bis=df.iloc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     gb_cv=GridSearchCV(gb, params, cv=KFold(5), n_jobs=-1)
     gb_cv.fit(X_train,y_train)
     y_pre=gb_cv.best_estimator_.predict(X)
-    dict={'classe relle':y, 'classe predicte': y_pre}
+    dict={'classe reel':y, 'classe predict': y_pre}
     data_frame=pd.DataFrame(dict)
     score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
     return [score, data_frame]
@@ -540,14 +543,15 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import r2_score
 scoring = make_scorer(r2_score)
 
-def dtr_continue(df,value):
+def dtr_continue(df,value, variables):
     
     params = {"max_depth": [3,6,9,12, None],
               "min_samples_leaf": np.arange(1,9,1),
               "criterion": ["mse", "friedman_mse", "mae"]}
-    df_bis=pd.get_dummies(df)
-    X=df_bis.drop(columns=[str(value)])
-    y=df_bis[str(value)]
+   
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeRegressor()
     dt_cv=GridSearchCV(dt, params, cv=5, scoring=scoring, n_jobs=-1)
@@ -568,13 +572,13 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import r2_score, accuracy_score
 scoring = make_scorer(r2_score)
 
-def dtc_continue(df,value):
+def dtc_continue(df,value,variables):
     
     params = {"max_depth": [3,6,9,12, None],
               "min_samples_leaf": np.arange(1,9,1),
               "criterion": ["gini", "entropy"]}
-    X=df.drop(columns=[str(value)])
-    X=pd.get_dummies(X)
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
     y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeClassifier()
@@ -616,18 +620,20 @@ def dtc_continue(df,value):
 
 
 @app.callback(Output('acc', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
+              [Input('cible', 'value')],[Input('predire', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output5(value1,contents,value2,filename):
+def update_output5(value1,variables,contents,value2,filename):
     children = html.Div()
+    
     if "Regression" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
             df=parse_contents(contents,filename)
             if value1:
-                children=html.Div(["R square of Regression =",  str(lin(df,value1)[0])])
+                if variables:
+                    children=html.Div(["R square of Regression =",  str(lin(df,value1, variables)[0])])
      
     return children
 
@@ -654,7 +660,7 @@ def update_output_dtc(value1,contents,value2,filename):
             df=parse_contents(contents,filename) 
             
             if value1:
-                children=html.Div(["R square of Decision Tree Classifier =",  str(dtc_continue(df, value1)[0])]) 
+                children=html.Div(["Accuracy_score of Decision Tree Classifier =",  str(dtc_continue(df, value1)[0])]) 
                                
      
     return children
@@ -667,10 +673,10 @@ def update_output_dtc(value1,contents,value2,filename):
 # Decision tree regressor
 
 @app.callback(Output('dtr_continue', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_dtr(value1,contents,value2,filename):
+def update_output_dtr(value1,variables,contents,value2,filename):
     
     children = html.Div()
     if "Decision tree Regressor" in value2:
@@ -680,7 +686,8 @@ def update_output_dtr(value1,contents,value2,filename):
             df=parse_contents(contents,filename) 
             
             if value1:
-                children=html.Div(["R square of Decision Tree Regressor =",  str(dtr_continue(df, value1)[0])]) 
+                if variables:
+                    children=html.Div(["R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])]) 
                                
      
     return children
@@ -695,10 +702,10 @@ def update_output_dtr(value1,contents,value2,filename):
 
 
 @app.callback(Output('neuron', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output8(value1,contents,value2,filename):
+def update_output8(value1,variables,contents,value2,filename):
     
     children = html.Div()
     if "SGB" in value2:
@@ -707,7 +714,8 @@ def update_output8(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1:
-                children=html.Div(["R square of Gradient boosting =",  str(gradient(df, value1)[0])]) 
+                if variables:
+                    children=html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])]) 
                                
      
     return children
@@ -874,7 +882,7 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                                                        'color': colors['text']
                                                        }
                                                        ),
-                                   html.Div(children=f"Taux d'erreur = {acc}", style={
+                                   html.Div(children=f"Taux d'erreur = {1-acc}", style={
                                                        'textAlign': 'center',
                                                        'color': colors['text']
                                                        }),
@@ -1022,10 +1030,10 @@ def update_sortie_adl(variables,vcible,contents,value2,filename):
 
 
 @app.callback(Output('graph', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_dtr_graph(value1,contents,value2,filename):
+def update_output_dtr_graph(value1,variables,contents,value2,filename):
     figu=html.Div()
     if "Decision tree Regressor" in value2:
         if contents:
@@ -1033,9 +1041,10 @@ def update_output_dtr_graph(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1: 
-                data_frame=dtr_continue(df, value1)[1]
+                if variables:
+                    data_frame=dtr_continue(df, value1, variables)[1]
 #                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
+                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
                                
     return figu
 
@@ -1052,10 +1061,10 @@ def update_output_dtr_graph(value1,contents,value2,filename):
 
 
 @app.callback(Output('graph1', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output19(value1,contents,value2,filename):
+def update_output19(value1,variables,contents,value2,filename):
     figu=html.Div()
     if "Regression" in value2:   
         if contents:
@@ -1063,10 +1072,11 @@ def update_output19(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1: 
-                data_frame=lin(df, value1)[1]
+                if variables:
+                    data_frame=lin(df, value1, variables)[1]
                 
   #              fig=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Regression"))])
+                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Regression"))])
          
                                
     return figu
@@ -1076,10 +1086,10 @@ def update_output19(value1,contents,value2,filename):
 
 
 @app.callback(Output('graph2', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output29(value1,contents,value2,filename):
+def update_output29(value1,variables,contents,value2,filename):
     figu=html.Div()
     if str(value2)=="SGB":
         if contents:
@@ -1087,9 +1097,10 @@ def update_output29(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             if value1: 
-                data_frame=gradient(df, value1)[1]
-                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB")
-                figu=html.Div(children=[dcc.Graph(figure=fig)])
+                if variables:
+                    data_frame=gradient(df, value1)[1]
+#                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB")
+                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
                                
     return figu
 
