@@ -759,7 +759,6 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                     param_grid = [    
                                 {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
                                  'C' : np.logspace(-4, 4, 20),
-                                 'solver' : ['lbfgs','newton-cg','liblinear','sag','saga'],
                                  'max_iter' : [100, 1000,2500, 5000]
                                  }
                                 ]
@@ -777,6 +776,9 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                     y_pred=clf.best_estimator_.predict(X_test)
                     y_pred_proba = clf.best_estimator_.predict_proba(X_test)[::,1]
                     y_scores=clf.best_estimator_.predict_proba(X_test)
+                    
+                    #score=r2_score(y_test,clf.best_estimator_.predict(X_test))
+                    
                     # import the metrics class
                     cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
                     confusion_matrix = pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted'])
@@ -875,7 +877,8 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                     end=time()
                     duration=(end-start)
                     return html.Div([
-                                   html.H1(
+                                
+                                  html.H2(
                                                children=f"Temps de calcul = {duration}",
                                                style={
                                                        'textAlign': 'center',
@@ -899,6 +902,12 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                                     ])
 
 
+    """
+html.Div(children=f"Score = {score}", style={
+'textAlign': 'center',
+'color': colors['text']
+}),
+"""
 
 #Calcul ADL 
 
