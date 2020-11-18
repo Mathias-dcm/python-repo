@@ -156,19 +156,7 @@ app.layout = html.Div([
     
     html.Div(id='tabletype'),
     html.Div(id='data'),
-    html.Div(id='para', children=
-        [dcc.Dropdown(
-        id='parameter',
-        children=html.Div([
-            'Choisir variable cible', 
-        ]),
-        placeholder="Choix des parametres pour la Régression (alpha)",
-         options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
-        multi=False,
-        style={'backgroundColor': '#5E3E3E'},
-        className='stockselector',
-       #value=[]
-        ), ] , style= {'display': 'none'}),
+   
     
   
     html.Div(id='graph_PCA',),
@@ -190,7 +178,19 @@ app.layout = html.Div([
             dcc.Tab(id='tab1', value='tab-1'),
             dcc.Tab(id="tab2", value='tab-2'),
             dcc.Tab(id="tab3", value='tab-3'),
-            ]),
+            ]),  html.Div(id='para', children=
+        [dcc.Dropdown(
+        id='parameter',
+        children=html.Div([
+            'Choisir variable cible', 
+        ]),
+        placeholder="Choix des parametres pour la Régression (alpha)",
+         options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
+        multi=False,
+        style={'backgroundColor': '#5E3E3E'},
+        className='stockselector',
+       #value=[]
+        ), ] , style= {'display': 'none'}),
             #On inclut tous les éléments graphiques dont on a besoin 
             html.Div(id='onglets_content',children=[
                 
@@ -208,6 +208,7 @@ app.layout = html.Div([
                   html.Div(id='graph2',),
                   html.Div(id='graph_adl'),
                   html.Div(id='reglog')
+                  
                 ])
         
             ]),
@@ -1262,7 +1263,7 @@ def update_output300(value):
 
     style={'display': 'none'}
     if "Regression" in value:
-        style={'display': 'block'}
+        style={'width': '33.5%','display': 'block'}
 
     return style
 
