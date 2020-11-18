@@ -118,21 +118,6 @@ app.layout = html.Div([
         html.Div(id='tabletype'),
         
         html.Div(id='data'),
-        
-        html.Div(id='para', children=
-                 [dcc.Dropdown(
-                     id='parameter',
-                     children=html.Div([
-                         'Choisir variable cible', 
-                     ]),
-                     placeholder="Choix des parametres pour la Régression (alpha)",
-                     options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
-                     multi=False,
-                     style={'backgroundColor': '#5E3E3E'},
-                     className='stockselector',
-                     #value=[]
-                ), ] , style= {'display': 'none'}
-        ),
   
         html.Div(id='graph_PCA',),
     
@@ -144,6 +129,18 @@ app.layout = html.Div([
        html.Div(id='div_onglets', className='control-tabs', children=[
             dcc.Tabs(id='tabs_onglets', value='tabs', children=[
             dcc.Tab(id='tab1', value='tab-1',children=[
+                 html.Div(id='para', children=
+                          [dcc.Dropdown(
+                              id='parameter',
+                              children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix des parametres pour la Régression (alpha)",
+                              options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
+                              multi=False,
+                              style={'backgroundColor': '#5E3E3E'},
+                              className='stockselector',
+                              #value=[]
+                          ), ] , style= {'display': 'none'}
+                ),
                 html.Div(id='acc'),
                 html.Div(id='graph_dtc',),
                 html.Div(id='graph1',),
@@ -155,6 +152,35 @@ app.layout = html.Div([
                   html.Div(id='graph',)
                 ]),
             dcc.Tab(id="tab3", value='tab-3',children=[
+                html.Div(id='param_adl', children=[
+                        dcc.RadioItems(id="radio_adl",
+                            options=[
+                                {'label': 'Paramètres optimaux', 'value': 'opti'},
+                                {'label': 'Paramètres manuels', 'value': 'manu'}
+                            ],
+                            value='opti',
+                            labelStyle={'display': 'inline-block'}
+                        ),  
+                        dcc.Dropdown(
+                              id='solver_adl',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du solver",
+                             # options=[{'label':'svd', 'value': 'svd'}]+[{'label':'lsqr', 'value': 'lsqr'}]+[{'label':'eigen','value':'eigen'}],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector',
+                        ),
+                        dcc.Dropdown(
+                              id='shrinkage_adl',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du shrinkage",
+                              #options=[{'label':'None', 'value': 'None'}]+[{'label':'auto', 'value': 'auto'}],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                        )
+                        ] , style= {'display': 'none'}
+                ),
                 html.Div(id='neuron'),
                  #html.Div(id='adl'),
                   html.Div(id='graph2',),
@@ -352,7 +378,7 @@ def QT_function(value):
 #    else:
 #        out="Quantitative"
     if value=="Qualitative":
-        output= ["regression logistique", "Decision tree Classifier","Analyse Discriminante linéaire"]
+        output= ["regression logistique", "Decision tree Classifier","Analyse Discriminante Linéaire"]
     elif value=="Quantitative":
         output=["Regression", "SGB", "Decision tree Regressor"]
     else: 
@@ -990,7 +1016,7 @@ def calcul_adl(df,vcible,variables):
     
     start = time()
     
-    #instanciation
+    #instanciation - recherche des hyperparametres optimaux et validation croisee
     lda = GridSearchCV(modele, param_grid=params, cv=5, n_jobs=-1)
     
     #apprentissage
@@ -1004,7 +1030,7 @@ def calcul_adl(df,vcible,variables):
     tps = round(done - start,3)
     
     #Mean cross-validated score of the best_estimator
-    score_moyen=lda.best_score_
+    score_moyen=round(lda.best_score_,3)
     
     #prediction 
     ypred = lda.predict(XTest)
@@ -1021,6 +1047,49 @@ def calcul_adl(df,vcible,variables):
     
     return mc, err,catego,met,score_moyen,tps
 
+
+def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
+    
+    if pshr=="None":
+        pshr=None
+        
+    y = df.loc[:,[str(vcible)]]
+    X=df.loc[:,variables]
+    pd.get_dummies(X)
+    #découpage entrainement / test 
+    XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
+    
+    
+    
+    start = time()
+    
+    #instanciation 
+    lda = LinearDiscriminantAnalysis(solver=psolver,shrinkage=pshr) 
+    
+    #apprentissage
+    lda.fit(XTrain,yTrain)
+    
+    #validation croisée 
+    scores = cross_val_score(lda, X, y, cv=5)
+    score_moyen = round(np.mean(scores),3)
+   
+    done = time()
+    tps = round(done - start,3)
+    
+    #prediction 
+    ypred = lda.predict(XTest)
+    #matrice de confusion
+    mc = metrics.confusion_matrix(yTest,ypred)
+    
+    #calcul des métriques par classe 
+    met= metrics.classification_report(yTest,ypred,output_dict=True)
+    #calcul du taux d'erreur 
+    err = round(1-metrics.accuracy_score(yTest,ypred),3)
+    
+    #récupération des labels des classes 
+    catego=lda.classes_
+    
+    return mc, err,catego,met,score_moyen,tps
 
 
 
@@ -1072,18 +1141,24 @@ def update_table(contents, filename):
 
 
 @app.callback(Output('graph_adl', 'children'),
-              [Input('predire','value')],[Input('cible', 'value')] , [Input('upload-data', 'contents')],[Input('algo', 'value')],
+              [Input('predire','value')],[Input('cible', 'value')] , [Input('solver_adl','value')],[Input('shrinkage_adl','value')],[Input('radio_adl','value')],[Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_sortie_adl(variables,vcible,contents,value2,filename):
+def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename):
     figu=html.Div()
-    if "Analyse Discriminante linéaire" in value2:
+    if "Analyse Discriminante Linéaire" in value2:
         if contents and variables:
             contents=contents[0]
             filename=filename[0]
     
             df=parse_contents(contents,filename)
-            table,err,catego,met,score_moyen,tps =calcul_adl(df, vcible, variables)
+            if radio == "manu": 
+                if solver=="svd":
+                    table,err,catego,met,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,None)
+                elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
+                    table,err,catego,met,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,shr)
+            else:
+                table,err,catego,met,score_moyen,tps =calcul_adl(df, vcible, variables)
             #test=""
             #for cat in catego:
              #   test=test+str(met[cat]["precision"])
@@ -1106,6 +1181,8 @@ def update_sortie_adl(variables,vcible,contents,value2,filename):
          
                                
     return figu
+
+
 
 
 
@@ -1255,7 +1332,34 @@ def update_output300(value):
 
     return style
 
+@app.callback(Output('param_adl', 'style'),
+              [Input('algo', 'value')])
 
+def display_param_adl(cible):
+
+    style={'display': 'none'}
+    if "Analyse Discriminante Linéaire" in cible:
+        style=dict(display='flex',width='100%',columnCount= 2)#{'display': 'inline'}#'width': '70%',
+
+    return style
+
+@app.callback(Output('shrinkage_adl','options'),
+             [Input('solver_adl','value')],[Input('radio_adl','value')])
+
+def options_shrinkage_adl(solver,radio):
+    if radio == "manu":
+        if solver=="lsqr" or solver=="eigen":
+            return [{'label':'None', 'value': 'None'}]+[{'label':'auto', 'value': 'auto'}]
+    return []
+
+@app.callback(Output('solver_adl','options'),
+             [Input('radio_adl','value')])
+
+def options_solver_adl(radio):
+    if radio == "manu":
+        return [{'label':'svd', 'value': 'svd'}]+[{'label':'lsqr', 'value': 'lsqr'}]+[{'label':'eigen','value':'eigen'}]
+    else:
+        return []
 
 
 ### RESET DROPDOWN CIBLE
