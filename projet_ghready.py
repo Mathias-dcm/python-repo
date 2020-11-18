@@ -265,7 +265,7 @@ def QT_function0(df,value):
             out="Qualitative"
         else:
             out="Quantitative"
-    return [str(out)]
+    return str(out)
 
 
 
@@ -327,7 +327,7 @@ def tabletype(value,contents,filename):
               [State('upload-data', 'filename')])
 
 def update_output(value, contents,filename): 
-    child = []   
+    #child = []   
 
     if contents:
         contents = contents[0]
@@ -353,28 +353,50 @@ def QT_function(value):
 #        out="Quantitative"
     if value=="Qualitative":
         output= ["regression logistique", "Decision tree Classifier","Analyse Discriminante linéaire"]
-    else:
+    elif value=="Quantitative":
         output=["Regression", "SGB", "Decision tree Regressor"]
+    else: 
+        output=[]
     return output
 
 
 
 
+# @app.callback(Output('algo', 'options'),
+#               [Input('pre_algo', 'children')])
+
+# def update_output00(value): 
+#     options = []   
+
+# #    if contents:
+# #        contents = contents[0]
+# #        filename = filename[0]
+# #        df = parse_contents(contents, filename)
+#     if value:
+#         out=QT_function(str(value))
+#         options=[{'label':name, 'value': name}  for name in out]
+#     else:
+#         options=[]
+#     return options
+
 @app.callback(Output('algo', 'options'),
-              [Input('pre_algo', 'children')])
+              [Input('cible', 'value')],[Input('upload-data', 'contents')],
+              [State('upload-data', 'filename')])
 
-def update_output00(value): 
+
+   
+
+def update_output00(cible,contents,filename): 
     options = []   
-
-#    if contents:
-#        contents = contents[0]
-#        filename = filename[0]
-#        df = parse_contents(contents, filename)
-    if value:
-        out=QT_function(str(value))
-        options=[{'label':name, 'value': name}  for name in out]
+    if contents:
+        contents = contents[0]
+        filename = filename[0]
+        df = parse_contents(contents, filename)
+        if cible:
+            type_var=QT_function0(df,cible)
+            out=QT_function(str(type_var))
+            options=[{'label':name, 'value': name}  for name in out]
     return options
-
 
 
 
@@ -960,20 +982,29 @@ def calcul_adl(df,vcible,variables):
     pd.get_dummies(X)
     #découpage entrainement / test 
     XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
+    
+    modele = LinearDiscriminantAnalysis() #Modèle
+    params = {'solver':['svd', 'lsqr','eigen'], 'shrinkage':[None, 'auto']} #Paramètres à tester
 
-    #instanciation
-    lda = LinearDiscriminantAnalysis()
+    
     
     start = time()
     
-    #validation croisée 
-    scores = cross_val_score(lda, X, y, cv=5)
-    score_moyen = round(np.mean(scores),3)
+    #instanciation
+    lda = GridSearchCV(modele, param_grid=params, cv=5, n_jobs=-1)
+    
     #apprentissage
     lda.fit(XTrain,yTrain)
     
+    #validation croisée 
+    #scores = cross_val_score(lda, X, y, cv=5)
+    #score_moyen = round(np.mean(scores),3)
+   
     done = time()
     tps = round(done - start,3)
+    
+    #Mean cross-validated score of the best_estimator
+    score_moyen=lda.best_score_
     
     #prediction 
     ypred = lda.predict(XTest)
