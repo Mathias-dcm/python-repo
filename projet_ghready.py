@@ -52,203 +52,155 @@ app.layout = html.Div([
     
     html.Div([ 
     
-    dcc.Upload(
-        id='upload-data',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '50%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px', 
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
-    ),
-    
-    html.Div(id='output-data-upload',
-             style={ 'width': '10%'}
-             ),    
-    
-        
-    
-    dcc.Dropdown(
-        id='cible',
-        children=html.Div([
-            'Choisir variable cible',
-        ]),
-         placeholder="Choix de la variable à prédire", 
-        options=[
-            {'label':'data', 'value': 'data'},
-        ],
-        multi=False,
-        style={'backgroundColor': '#5E3E3E'},
-        className='stockselector',
-       #value=[]
+        #Glisser-Déposer 
+        dcc.Upload(
+            id='upload-data',
+            children=html.Div([
+                'Drag and Drop or ',
+                html.A('Select Files')
+            ]),
+            style={
+                'width': '50%',
+                'height': '60px',
+                'lineHeight': '60px',
+                'borderWidth': '1px',
+                'borderStyle': 'dashed',
+                'borderRadius': '5px', 
+                'textAlign': 'center',
+                'margin': '10px'
+            },
+            # Allow multiple files to be uploaded
+            multiple=True
         ),
     
+        html.Div(id='output-data-upload',
+             style={ 'width': '50%'} 
+        ),       
     
-    
-    
-       dcc.Dropdown(
-        id='pre_algo',
-        children=html.Div([
-            'Choisir variable cible',
-        ]),
-        placeholder="Choix le type",
-        options=[
-            {'label':'data', 'value': 'data'},
-        ],
-        multi=False,
-        style={'backgroundColor': '#5E3E3E'},
-        className='stockselector',
-        value=[]
+        dcc.Dropdown(
+            id='cible',
+            children=html.Div(['Choisir variable cible']),
+            placeholder="Choix de la variable à prédire", 
+            options=[{'label':'data', 'value': 'data'}],
+            multi=False,
+            style={'backgroundColor': '#5E3E3E'},
+            className='stockselector',
+            #value=[]
         ),
-    
-    
-    
-    
-    dcc.Dropdown(
-        id='algo',
-        children=html.Div([
-            'Choisir variable cible',
-        ]),
-        placeholder="Choix de l'algorithme",
-        options=[
-            {'label':'data', 'value': 'data'},
-        ],
-        multi=True,
-        style={'backgroundColor': '#5E3E3E'},
-        className='stockselector',
-       #value=[]
-        ),
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    dcc.Dropdown(
-        id='predire',
-        children=html.Div([
-            'Choisir variable cible',
-        ]),
-        placeholder="Choix des variables prédictives", 
-         style={'backgroundColor': '#5E3E3E'},
-        options=[
-            
-          
-        ],
-        multi=True,
-    
-        className='stockselector',
-#        value=['data']
-        ),
-    
-    html.Div(id='tabletype'),
-    html.Div(id='data'),
-   
-    
-  
-    html.Div(id='graph_PCA',),
-    
 
+        html.Div(
+            id='pre_algo',
+            children=["Type de la variable cible"]
+        ),
+
+        dcc.Dropdown(
+            id='algo',
+            children=html.Div([ 'Choisir variable cible' ]),
+            placeholder="Choix de l'algorithme",
+            options=[ {'label':'data', 'value': 'data'}],
+            multi=True,
+            style={'backgroundColor': '#5E3E3E'},
+            className='stockselector',
+            #value=[]
+        ),
+
+        dcc.Dropdown(
+            id='predire',
+            children=html.Div(['Choisir variable cible']),
+            placeholder="Choix des variables prédictives", 
+            style={'backgroundColor': '#5E3E3E'},
+            options=[ ],
+            multi=True,
+            className='stockselector',
+            #        value=['data']
+        ),
     
-   
-   
+        html.Div(id='tabletype'),
+        
+        html.Div(id='data'),
+        
+        html.Div(id='para', children=
+                 [dcc.Dropdown(
+                     id='parameter',
+                     children=html.Div([
+                         'Choisir variable cible', 
+                     ]),
+                     placeholder="Choix des parametres pour la Régression (alpha)",
+                     options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
+                     multi=False,
+                     style={'backgroundColor': '#5E3E3E'},
+                     className='stockselector',
+                     #value=[]
+                ), ] , style= {'display': 'none'}
+        ),
+  
+        html.Div(id='graph_PCA',),
+    
     ], style={'width': '30%', 'display': 'inline-block'}) ,
     
-    
-    
-   html.Div([ 
-       
-       
+    html.Div([ 
+
        #Création d'onglets pour afficher les résultats des différentes méthodes 
        html.Div(id='div_onglets', className='control-tabs', children=[
             dcc.Tabs(id='tabs_onglets', value='tabs', children=[
-            dcc.Tab(id='tab1', value='tab-1'),
-            dcc.Tab(id="tab2", value='tab-2'),
-            dcc.Tab(id="tab3", value='tab-3'),
-            ]),  html.Div(id='para', children=
-        [dcc.Dropdown(
-        id='parameter',
-        children=html.Div([
-            'Choisir variable cible', 
-        ]),
-        placeholder="Choix des parametres pour la Régression (alpha)",
-         options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
-        multi=False,
-        style={'backgroundColor': '#5E3E3E'},
-        className='stockselector',
-       #value=[]
-        ), ] , style= {'display': 'none'}),
-            #On inclut tous les éléments graphiques dont on a besoin 
-            html.Div(id='onglets_content',children=[
-                
+            dcc.Tab(id='tab1', value='tab-1',children=[
                 html.Div(id='acc'),
-                html.Div(id='dtr_continue'),
+                html.Div(id='graph_dtc',),
+                html.Div(id='graph1',),
+                html.Div(id='reglog')
+                ]),
+            dcc.Tab(id="tab2", value='tab-2',children=[
+                 html.Div(id='dtr_continue'),
                 html.Div(id='dtc_continue'),
+                  html.Div(id='graph',)
+                ]),
+            dcc.Tab(id="tab3", value='tab-3',children=[
                 html.Div(id='neuron'),
-                html.Div(id='gradient_class'),
-                html.Div(id='adl'),
-                html.Div(id='ensemble'),
-              
-                  html.Div(id='graph',),
-                  html.Div(id='graph_dtc',),
-                  html.Div(id='graph1',),
+                 #html.Div(id='adl'),
                   html.Div(id='graph2',),
-                  html.Div(id='graph_adl'),
-                  html.Div(id='reglog')
-                  
-                ])
+                  html.Div(id='graph_adl')
+                ]),
+            ]),  
+            #On inclut tous les éléments graphiques dont on a besoin 
+            # html.Div(id='onglets_content',children=[
+            #     html.Div(id='gradient_class'),
+            #     html.Div(id='ensemble'),                  
+            #     ])
         
-            ]),
-    
-    
+        ]),
     ],style={'width': '70%', 'display': 'inline-block', 'vertical-align': 'top'})
-    
-  
-
-],
-   )
+     
+#Fin du layout 
+])
 
 
 #Affichage du contenu spécifique à chaque onglet 
-@app.callback(Output('onglets_content', 'children'),
-              [Input('tabs_onglets', 'value')])
+# @app.callback(Output('onglets_content', 'children'),
+#               [Input('tabs_onglets', 'value')])
 
-def update_content_ongglets(tab):
+# def update_content_ongglets(tab):
     
-    if tab == 'tab-1':
-        return html.Div([
-            html.Div(id='acc'),
-            html.Div(id='graph_dtc',),
-            html.Div(id='graph1',),
-            html.Div(id='reglog'),
+#     if tab == 'tab-1':
+#         return html.Div([
+#             html.Div(id='acc'),
+#             html.Div(id='graph_dtc',),
+#             html.Div(id='graph1',),
+#             html.Div(id='reglog'),
            
     
-        ])
-    elif tab=="tab-2":
-        return html.Div([
-            html.Div(id='dtr_continue'),
-            html.Div(id='dtc_continue'),
-            html.Div(id='graph',)
-            ])
-    elif tab == 'tab-3':
-        return html.Div([
-            html.Div(id='graph_adl'),
-             html.Div(id='neuron'),
-             html.Div(id='graph2',)
-        ])
+#         ])
+#     elif tab=="tab-2":
+#         return html.Div([
+#             html.Div(id='dtr_continue'),
+#             html.Div(id='dtc_continue'),
+#             html.Div(id='graph',)
+#             ])
+#     elif tab == 'tab-3':
+#         return html.Div([
+#             html.Div(id='graph_adl'),
+#              html.Div(id='neuron'),
+#              html.Div(id='graph2',)
+#         ])
 
 
 #Modification du label de chaque onglet en fonction du type de la variable cible 
@@ -370,12 +322,12 @@ def tabletype(value,contents,filename):
 
 
 
-@app.callback(Output('pre_algo', 'options'),
+@app.callback(Output('pre_algo', 'children'),
               [Input('cible', 'value')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
 def update_output(value, contents,filename): 
-    options = []   
+    child = []   
 
     if contents:
         contents = contents[0]
@@ -383,8 +335,10 @@ def update_output(value, contents,filename):
         df = parse_contents(contents, filename)
         if value:
             out=QT_function0(df, str(value))
-            options=[{'label':name, 'value': name}  for name in out]
-    return options
+            child=out
+        else:child="Type de la variable cible"
+    else: child="Type de la variable cible"
+    return child
 
 
 
@@ -407,7 +361,7 @@ def QT_function(value):
 
 
 @app.callback(Output('algo', 'options'),
-              [Input('pre_algo', 'value')])
+              [Input('pre_algo', 'children')])
 
 def update_output00(value): 
     options = []   
@@ -1072,6 +1026,9 @@ def update_table(contents, filename):
             #    'wordBreak': 'break-all'
             #})
         ])
+    else : 
+        table = html.Div([
+            html.H5("Aucune donnée")])
 
     return table
               
@@ -1214,7 +1171,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 @app.callback(Output('graph_PCA', 'children'),
-              [Input('cible', 'value')], [Input('pre_algo', 'value')], [Input('upload-data', 'contents')],
+              [Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
 def update_output30(value1,value2,contents,filename):
@@ -1278,9 +1235,9 @@ def update_output300(value):
 def callback11(value):
     return ""
 
-@app.callback(Output('pre_algo', 'value'), [Input('pre_algo', 'options')])
-def callback12(value):
-    return ""
+# @app.callback(Output('pre_algo', 'children'), [Input('pre_algo', 'children')])
+# def callback12(value):
+#     return ""
 
 
 @app.callback(Output('algo', 'value'), [Input('algo', 'options')])
