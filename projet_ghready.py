@@ -83,14 +83,15 @@ app.layout = html.Div([
             placeholder="Choix de la variable à prédire", 
             options=[{'label':'data', 'value': 'data'}],
             multi=False,
-            style={'backgroundColor': '#5E3E3E'},
+            style={'backgroundColor': '#84DCCF'},
             className='stockselector',
             #value=[]
         ),
 
         html.Div(
             id='pre_algo',
-            children=["Type de la variable cible"]
+            children=["Type de la variable cible"],
+            style={'backgroundColor': '#FFCB77'},
         ),
 
         dcc.Dropdown(
@@ -99,7 +100,7 @@ app.layout = html.Div([
             placeholder="Choix de l'algorithme",
             options=[ {'label':'data', 'value': 'data'}],
             multi=True,
-            style={'backgroundColor': '#5E3E3E'},
+            style={'backgroundColor': '#84DCCF'},
             className='stockselector',
             #value=[]
         ),
@@ -108,7 +109,7 @@ app.layout = html.Div([
             id='predire',
             children=html.Div(['Choisir variable cible']),
             placeholder="Choix des variables prédictives", 
-            style={'backgroundColor': '#5E3E3E'},
+            style={'backgroundColor': '#FFCB77'},
             options=[ ],
             multi=True,
             className='stockselector',
@@ -136,11 +137,32 @@ app.layout = html.Div([
                               placeholder="Choix des parametres pour la Régression (alpha)",
                               options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
                               multi=False,
-                              style={'backgroundColor': '#5E3E3E'},
+                              style={'backgroundColor': '#FFCAB1'},
                               className='stockselector',
                               #value=[]
                           ), ] , style= {'display': 'none'}
                 ),
+                 html.Div(id='paraRegLog_1', children=
+                     [dcc.Dropdown(id='paraRegLog1',children=html.Div([
+                                                         'Choisir C', 
+                                                                   ]),
+                                                 placeholder="Choix des parametres C",
+                                                 options=[{'label':f'c={name}', 'value': name} for name in list(np.logspace(-4, 4, 20))],
+                                                 multi=False,
+                                                 style={'backgroundColor': '#FFCAB1'},
+                                                 className='stockselector',
+           ),], style= {'display': 'none'}),        
+            
+             html.Div(id='paraRegLog_2', children=
+                     [dcc.Dropdown(id='paraRegLog2',children=html.Div([
+                                                         'Choisir pelnaty', 
+                                                                   ]),
+                                                 placeholder="Choix de pelnaty",
+                                                 options=[{'label':f'pelnaty={name}', 'value': name} for name in ['l2', 'none']],
+                                                 multi=False,
+                                                 style={'backgroundColor': '#FFCAB1'},
+                                                 className='stockselector',
+           ),], style= {'display': 'none'}),           
                 html.Div(id='acc'),
                 html.Div(id='graph_dtc',),
                 html.Div(id='graph1',),
@@ -378,7 +400,7 @@ def QT_function(value):
 #    else:
 #        out="Quantitative"
     if value=="Qualitative":
-        output= ["regression logistique", "Decision tree Classifier","Analyse Discriminante Linéaire"]
+        output= ["Régression Logistique", "Decision tree Classifier","Analyse Discriminante Linéaire"]
     elif value=="Quantitative":
         output=["Regression", "SGB", "Decision tree Regressor"]
     else: 
@@ -830,12 +852,13 @@ def report_to_df(report):
 
 
 @app.callback(Output('reglog', 'children'),
-              [Input('predire','value')],[Input('cible', 'value')] , [Input('upload-data', 'contents')],[Input('algo', 'value')],
+              [Input('predire','value')],
+              [Input('paraRegLog1', 'value')],[Input('paraRegLog2', 'value')],
+              [Input('cible', 'value')] , [Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_RL(variables,vcible,contents,value2,filename):
-    children = html.Div()
-    if "regression logistique" in value2:
+def update_output_RL(variables,para1,para2,vcible,contents,value2,filename):
+    if "Régression Logistique" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
@@ -845,12 +868,32 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                     start=time()
                     y = y=df[str(vcible)]
                     X=df.loc[:,variables]
-                    param_grid = [    
-                                {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
-                                 'C' : np.logspace(-4, 4, 20),
+                    if para1:
+                        if para2:
+                            param_grid = [    
+                                {'penalty' : [para2],
+                                 'C' : [para1],
+                                 'solver' : ['lbfgs','newton-cg'],
                                  'max_iter' : [100, 1000,2500, 5000]
                                  }
                                 ]
+                        else:
+                            param_grid = [    
+                                {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
+                                 'C' : [para1],
+                                 'solver' : ['lbfgs','newton-cg'],
+                                 'max_iter' : [100, 1000,2500, 5000]
+                                 }
+                                ]
+                            
+                    else:
+                        param_grid = [    
+                            {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
+                             'solver' : ['lbfgs','newton-cg'],#,'newton-cg','sag','saga'],
+                             'C' : np.logspace(-4, 4, 20),
+                             'max_iter' : [100, 1000,2500, 5000]
+                             }
+                            ]
                     # split X and y into training and testing sets
                     X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=0)
 
@@ -865,6 +908,7 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                     y_pred=clf.best_estimator_.predict(X_test)
                     y_pred_proba = clf.best_estimator_.predict_proba(X_test)[::,1]
                     y_scores=clf.best_estimator_.predict_proba(X_test)
+                    score=clf.best_score_
                     
                     #score=r2_score(y_test,clf.best_estimator_.predict(X_test))
                     
@@ -912,8 +956,8 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                             fig_ROC.add_trace(go.Scatter(x=fpr, y=tpr, name=name, mode='lines'))
 
                         fig_ROC.update_layout(
-                                        xaxis_title='False Positive Rate',
-                                        yaxis_title='True Positive Rate',
+                                        xaxis_title='Taux de Faux Positif',
+                                        yaxis_title='Taux de Vrai Positf',
                                         yaxis=dict(scaleanchor="x", scaleratio=1),
                                         xaxis=dict(constrain='domain'),
                                         width=700, height=500
@@ -923,10 +967,10 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                          auc = metrics.roc_auc_score(y_test, y_pred_proba)
                          fpr, tpr, thresholds = metrics.roc_curve(y_test,  y_pred_proba)
                          df1 = pd.DataFrame({
-                                        'False Positive Rate': fpr,
-                                        'True Positive Rate': tpr
+                                        'Taux de Faux Positif': fpr,
+                                        'Taux de Vrai Positf': tpr
                                         }, index=thresholds)
-                         df1.index.name = "Thresholds"
+                         df1.index.name = "Seuil"
                          df1.columns.name = "Rate"
                          fig_ROC = px.area(
                                             x=fpr, y=tpr,
@@ -939,7 +983,7 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                                 x0=0, x1=1, y0=0, y1=1
                               )
                          fig_thresh = px.line(
-                                    df1, title='TPR and FPR at every threshold',
+                                    df1, title='Taux de TP et Taux de FP à chaque seuil',
                                     width=700, height=500
                                     )
                          fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
@@ -962,7 +1006,7 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                     """
                     catego=clf.classes_
                     #fig_matcon=ff.create_annotated_heatmap(cnf_matrix)
-                    fig_matcon=px.imshow(cnf_matrix,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Analyse Discriminante Linéaire : Matrice de confusion")
+                    fig_matcon=px.imshow(cnf_matrix,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Matrice de confusion")
                     end=time()
                     duration=(end-start)
                     return html.Div([
@@ -972,8 +1016,11 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                                                style={
                                                        'textAlign': 'center',
                                                        'color': colors['text']
-                                                       }
-                                                       ),
+                                                       }),
+                                  html.Div(children=f"Score = {score}", style={
+                                                      'textAlign': 'center',
+                                                      'color': colors['text']
+                                                      }),
                                    html.Div(children=f"Taux d'erreur = {1-acc}", style={
                                                        'textAlign': 'center',
                                                        'color': colors['text']
@@ -985,11 +1032,11 @@ def update_output_RL(variables,vcible,contents,value2,filename):
                                                                    editable=True
                                                                    )]),
                                     html.Div([dcc.Graph(id='MaCo', figure=fig_matcon)]),
-                                    html.Div([dcc.Graph(id='ROC', figure=fig_ROC)]),
+                                    html.Div([dcc.Graph(id='ROC', figure=fig_ROC),
+                                              dcc.Graph(id='Thresh', figure=fig_thresh)
+                                              ],style={'columnCount': 2}),
                                     html.Div([dcc.Graph(id='Hist', figure=fig_hist)]),
-                                    html.Div([dcc.Graph(id='Thresh', figure=fig_thresh)]) 
                                     ])
-
 
     """
 html.Div(children=f"Score = {score}", style={
@@ -1157,6 +1204,8 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                     table,err,catego,met,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,None)
                 elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
                     table,err,catego,met,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,shr)
+                else:
+                    table,err,catego,met,score_moyen,tps =calcul_adl(df, vcible, variables)
             else:
                 table,err,catego,met,score_moyen,tps =calcul_adl(df, vcible, variables)
             #test=""
@@ -1306,11 +1355,30 @@ def update_output30(value1,value2,contents,filename):
                 X=pd.get_dummies(X)
                 sc = StandardScaler() 
                 X_normalized = sc.fit_transform(X)  
-                pca = PCA(n_components=3)
+                pca = PCA(n_components=2)
                 components = pca.fit_transform(X_normalized) 
 #                components=np.c_[components,y]
 #            fig = px.scatter_3d(components, x=0, y=1, z=2, labels={'0':'PC1', '1':'PC2', '2':'valeur réel'})
-                figu=html.Div(children=[dcc.Graph(id='fig1',  figure=px.scatter_3d(components, color=df[str(value1)], x=0, y=1, z=2, labels={'0':'PC1', '1':'PC2', '2':'PC3'}))])
+
+                loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
+                features=X.columns
+                fig=px.scatter(components, color=df[str(value1)], x=0, y=1, labels={'0':'PC1', '1':'PC2'})
+                for i, feature in enumerate(features):
+                    fig.add_shape(
+                        type='line',
+                        x0=0, y0=0,
+                        x1=loadings[i, 0],
+                        y1=loadings[i, 1]
+                        )
+                    fig.add_annotation(
+                        x=loadings[i, 0],
+                        y=loadings[i, 1],
+                        ax=0, ay=0,
+                        xanchor="center",
+                        yanchor="bottom",
+                        text=feature,
+                        )
+                figu=html.Div(children=[dcc.Graph(id='fig1',  figure=fig)])
                 
     return figu
 
@@ -1362,6 +1430,29 @@ def options_solver_adl(radio):
         return []
 
 
+@app.callback(Output('paraRegLog_1', 'style'),
+              [Input('algo', 'value')])
+
+
+def update_outputParaRegLog1(value2):
+
+    style={'display': 'none'}
+    if ("Régression Logistique" in value2):
+        style={'width': '33.5%','display': 'block'}
+
+    return style
+
+@app.callback(Output('paraRegLog_2', 'style'),
+              [Input('algo', 'value')])
+
+def update_outputParaRegLog(value2):
+
+    style={'display': 'none'}
+    if ("Régression Logistique" in value2):
+        style={'width': '33.5%','display': 'block'}
+
+    return style
+
 ### RESET DROPDOWN CIBLE
 
 
@@ -1386,6 +1477,13 @@ def callback14(value):
     return ""
 
 
+@app.callback(Output('paraRegLog1', 'value'), [Input('paraRegLog1', 'options')])
+def callback16(value):
+    return ""
+
+@app.callback(Output('paraRegLog2', 'value'), [Input('paraRegLog2', 'options')])
+def callback17(value):
+    return ""
 
 
 
