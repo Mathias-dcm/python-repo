@@ -157,7 +157,7 @@ app.layout = html.Div([
                      [dcc.Dropdown(id='paraRegLog2',children=html.Div([
                                                          'Choisir pelnaty', 
                                                                    ]),
-                                                 placeholder="Choix de pelnaty",
+                                                 placeholder="Choix de penalty",
                                                  options=[{'label':f'pelnaty={name}', 'value': name} for name in ['l2', 'none']],
                                                  multi=False,
                                                  style={'backgroundColor': '#FFCAB1'},
@@ -168,11 +168,55 @@ app.layout = html.Div([
                 html.Div(id='graph1',),
                 html.Div(id='reglog')
                 ]),
-            dcc.Tab(id="tab2", value='tab-2',children=[
-                 html.Div(id='dtr_continue'),
-                html.Div(id='dtc_continue'),
-                  html.Div(id='graph',)
-                ]),
+            dcc.Tab(id="tab2", value='tab-2',children=[html.Div(id='param_dtr', children=
+                        [dcc.Dropdown(id="radio_dtr",
+                            options=[
+                                {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
+                           
+                            
+                            value='Paramètres optimaux',
+                            style={'width':'75%'}
+                            
+                        ),],style={'display': 'none'}),  
+                   html.Div(id='paradtr1',children=[dcc.Dropdown(
+                              id='depth_dtr',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du max_depth",
+                              options=[{'label':name, 'value': name} for name in [3,6,9,12]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector',
+                        ),],style= {'display': 'none'}),
+
+
+
+                   html.Div(id='paradtr2',children=[dcc.Dropdown(
+                              id='sample_dtr',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du min_samples_leaf",
+                              options=[{'label':name, 'value': name} for name in list(np.arange(1,9,1))],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                        ),],style={'display': 'none'}),
+                        
+                    html.Div(id='paradtr3',children=[dcc.Dropdown(
+                              id='criterion_dtr',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du criterion",
+                              options=[{'label':name, 'value': name} for name in ["mse", "friedman_mse", "mae"]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                        ),], style={'display': 'none'}),
+                    html.Div(id='dtr_continue'),
+                    html.Div(id='dtc_continue'),
+                    html.Div(id='graph',)
+                ])
+                ,
+            
+            
+            
             dcc.Tab(id="tab3", value='tab-3',children=[
                 html.Div(id='param_adl', children=[
                         dcc.RadioItems(id="radio_adl",
@@ -659,6 +703,29 @@ def dtr_continue(df,value, variables):
     
 
 
+def dtr_continue_params(df,value, variables,para1,para2,para3):
+    
+    params = {"max_depth": [para1],
+              "min_samples_leaf": [para2],
+              "criterion": [para3]}
+   
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
+    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
+    start=time()
+    dt = DecisionTreeRegressor()
+    dt_cv=GridSearchCV(dt, params, cv=5, scoring=scoring, n_jobs=-1)
+    dt_cv.fit(X_train,y_train)
+    end=time()
+    acc=r2_score(y_test, dt_cv.best_estimator_.predict(X_test))
+    y_pre=dt_cv.best_estimator_.predict(X)
+    dict={'valeur reel':y, 'valeur predict': y_pre}
+    done=round(end-start,3)
+    data_frame=pd.DataFrame(dict)
+    return [acc, data_frame, done]
+
+
 # DECISION TREE CLASSIFIER
 
 
@@ -784,10 +851,10 @@ def update_output_dtc(value1,contents,value2,filename):
 # Decision tree regressor
 
 @app.callback(Output('dtr_continue', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtr','value')],[Input('depth_dtr','value')],[Input('sample_dtr','value')],[Input('criterion_dtr','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_dtr(value1,variables,contents,value2,filename):
+def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2,filename):
     
     children = html.Div()
     if "Decision tree Regressor" in value2:
@@ -798,7 +865,14 @@ def update_output_dtr(value1,variables,contents,value2,filename):
             
             if value1:
                 if variables:
-                    children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue(df, value1, variables)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])])]) 
+                    if params:
+                        if params=="Paramètres optimaux": 
+                            children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue(df, value1, variables)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])])]) 
+                        if params=="Paramètres manuels":
+                            if para1:
+                                if para2:
+                                    if para3:
+                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])])]) 
                                
      
     return children
@@ -1242,10 +1316,11 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
 
 
 @app.callback(Output('graph', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('radio_dtr','value')],[Input('depth_dtr','value')],[Input('sample_dtr','value')],[Input('criterion_dtr','value')],
+              [Input('predire','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_dtr_graph(value1,variables,contents,value2,filename):
+def update_output_dtr_graph(value1,params,para1,para2,para3,variables,contents,value2,filename):
     figu=html.Div()
     if "Decision tree Regressor" in value2:
         if contents:
@@ -1254,10 +1329,17 @@ def update_output_dtr_graph(value1,variables,contents,value2,filename):
             df=parse_contents(contents,filename) 
             if value1: 
                 if variables:
-                    data_frame=dtr_continue(df, value1, variables)[1]
-#                fig = px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Graphique")
-                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
-                               
+                    if params:
+                        if params=='Paramètres optimaux':
+                            data_frame=dtr_continue(df, value1, variables)[1]
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
+                        if params=='Paramètres manuels':
+                            if para1:
+                                if para2:
+                                    if para3:
+                                         data_frame=dtr_continue_params(df, value1, variables,para1,para2,para3)[1]
+                                         figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
+                            
     return figu
 
 
@@ -1399,6 +1481,73 @@ def update_output300(value):
         style={'width': '33.5%','display': 'block'}
 
     return style
+
+
+
+
+@app.callback(Output('param_dtr', 'style'),
+              [Input('algo', 'value')])
+
+def display_param_dtr(cible):
+
+    style={'display': 'none'}
+    if "Decision tree Regressor" in cible:
+        style={'width': '37.5%','display': 'block'}
+
+    return style
+
+
+@app.callback(Output('paradtr1', 'style'),
+              [Input('radio_dtr', 'value')], [Input('algo', 'value')])
+
+def options_depth_dtr(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "Decision tree Regressor" in algo:
+            style={'width': '37.5%','display': 'block'}
+
+    return style
+
+
+
+@app.callback(Output('paradtr2', 'style'),
+              [Input('radio_dtr', 'value')], [Input('algo', 'value')])
+
+def options_sample_dtr(value, algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "Decision tree Regressor" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
+
+
+
+
+@app.callback(Output('paradtr3', 'style'),
+              [Input('radio_dtr', 'value')], [Input('algo', 'value')])
+
+def options_criterion_dtr(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "Decision tree Regressor" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.callback(Output('param_adl', 'style'),
               [Input('algo', 'value')])
