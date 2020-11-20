@@ -263,6 +263,83 @@ app.layout = html.Div([
                         )
                         ] , style= {'display': 'none'}
                 ),
+                
+                
+                html.Div(id='param_sgb', children=
+                        [dcc.Dropdown(id="radio_sgb",
+                            options=[
+                                {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
+                            value='Paramètres manuels',
+                            style={'width':'75%'}   
+                        ),],style={'display': 'none'}),  
+                
+                
+                
+                 html.Div(id='parasgb1',children=[
+                            dcc.Dropdown(
+                                id='n_estimators_sgb',
+                                #children=html.Div(['Choisir variable cible' ]),
+                                placeholder="Choix du n_estimators",
+                                options=[{'label':name, 'value': name} for name in [16,32,64,100,200]],
+                                multi=False,
+                                style={'width':'75%'},
+                                className='stockselector',
+                            )
+                        ],style= {'display': 'none'}),
+
+                       html.Div(id='parasgb2',children=[
+                           dcc.Dropdown(
+                              id='learning_rate_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du learning_rate",
+                              options=[{'label':name, 'value': name} for name in [0.25,0.1,0.05,0.025, 0.01]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                          )
+                       ,],style={'display': 'none'}),
+                        
+                       html.Div(id='parasgb3',children=[
+                           dcc.Dropdown(
+                              id='max_depth_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du max_depth",
+                              options=[{'label':name, 'value': name} for name in [1,2,4,8]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                           )
+                        ,], style={'display': 'none'}),
+                       
+                       
+                       html.Div(id='parasgb4',children=[
+                           dcc.Dropdown(
+                              id='sub_sample_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du sub_sample",
+                              options=[{'label':name, 'value': name} for name in [0.5,0.9,1]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                           )
+                        ,], style={'display': 'none'}),
+                       
+                       
+                        html.Div(id='parasgb5',children=[
+                           dcc.Dropdown(
+                              id='max_features_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du max_features",
+                              options=[{'label':name, 'value': name} for name in [0.5,0.75]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                           )
+                        ,], style={'display': 'none'}),
+                       
+                
+                
+                
                 html.Div(id='neuron'),
                 html.Div(id='graph2',),
                 html.Div(id='graph_adl')
@@ -661,6 +738,41 @@ def gradient(df,value,variables):
     return [score, data_frame, done]
     
     
+    
+    
+# hyperparametre fixe    
+    
+def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
+    
+    params = {'n_estimators': [para1],
+              'learning_rate': [para2],
+              'max_depth': [para3],
+              'subsample': [para4],
+              'max_features': [para5]}
+    gb = GradientBoostingRegressor()
+ 
+    df_bis=df.loc[:,variables]   
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
+    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
+    start=time()
+    gb_cv=GridSearchCV(gb, params, cv=KFold(5), n_jobs=-1)
+    gb_cv.fit(X_train,y_train)
+    end=time()
+    y_pre=gb_cv.best_estimator_.predict(X)
+    dict={'valeur reel':y, 'valeur predict': y_pre}
+    data_frame=pd.DataFrame(dict)
+    done=round(end-start,3)
+    score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
+    return [score, data_frame, done]
+    
+    
+   
+    
+    
+    
+    
+    
 
 
 ##############################################################################
@@ -867,7 +979,7 @@ def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2
                             if para1:
                                 if para2:
                                     if para3:
-                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])])]) 
+                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[0])])]) 
                                
      
     return children
@@ -882,10 +994,12 @@ def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2
 
 
 @app.callback(Output('neuron', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')],[Input('radio_sgb','value')],[Input('n_estimators_sgb','value')],[Input('learning_rate_sgb','value')],[Input('max_depth_sgb','value')],
+              [Input('sub_sample_sgb','value')],  [Input('max_features_sgb','value')],
+              [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output8(value1,variables,contents,value2,filename):
+def update_output8(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename): 
     
     children = html.Div()
     if "SGB" in value2:
@@ -895,7 +1009,16 @@ def update_output8(value1,variables,contents,value2,filename):
             df=parse_contents(contents,filename) 
             if value1:
                 if variables:
-                    children=html.Div([html.Div(["Temps de calcul =", str(gradient(df, value1, variables)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])])]) 
+                    if params:
+                        if params=="Paramètres optimaux":
+                            children=html.Div([html.Div(["Temps de calcul =", str(gradient(df, value1, variables)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])])]) 
+                        if params=="Paramètres manuels":
+                            if para1:
+                                if para2:
+                                    if para3:
+                                        if para4:
+                                            if para5:
+                                                children=html.Div([html.Div(["Temps de calcul =", str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[0])])]) 
                                
      
     return children
@@ -1367,10 +1490,11 @@ def update_output19(value1,para,variables,contents,value2,filename):
 
 
 @app.callback(Output('graph2', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('radio_sgb','value')],[Input('n_estimators_sgb','value')],[Input('learning_rate_sgb','value')],[Input('max_depth_sgb','value')],
+              [Input('sub_sample_sgb','value')],  [Input('max_features_sgb','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output29(value1,variables,contents,value2,filename):
+def update_output29(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename):
     figu=html.Div()
     if "SGB" in value2:
         if contents:
@@ -1379,10 +1503,18 @@ def update_output29(value1,variables,contents,value2,filename):
             df=parse_contents(contents,filename) 
             if value1: 
                 if variables:
-                    data_frame=gradient(df, value1, variables)[1]
-
-                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
-                               
+                    if params:
+                        if params=='Paramètres optimaux':
+                            data_frame=gradient(df, value1, variables)[1]
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
+                        if params=='Paramètres manuels':
+                            if para1:
+                                if para2:
+                                    if para3:
+                                        if para4:
+                                            if para5:
+                                                data_frame=gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[1]
+                                                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
     return figu
 
 
@@ -1531,6 +1663,93 @@ def options_criterion_dtr(value,algo):
         if "Decision tree Regressor" in algo:
             style={'width': '37.5%','display': 'block'}
     return style
+
+
+
+
+
+
+@app.callback(Output('param_sgb', 'style'),
+              [Input('algo', 'value')])
+
+def display_param_sgb(cible):
+
+    style={'display': 'none'}
+    if "SGB" in cible:
+        style={'width': '37.5%','display': 'block'}
+
+    return style
+
+
+
+@app.callback(Output('parasgb1', 'style'),
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')])
+
+def options_estimator_sgb(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "SGB" in algo:
+            style={'width': '37.5%','display': 'block'}
+
+    return style
+
+
+
+
+@app.callback(Output('parasgb2', 'style'),
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')])
+
+def options_learningrate_sgb(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "SGB" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
+
+
+
+@app.callback(Output('parasgb3', 'style'),
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')])
+
+def options_depth_sgb(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "SGB" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
+
+
+
+@app.callback(Output('parasgb4', 'style'),
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')])
+
+def options_sample_sgb(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "SGB" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
+
+
+
+@app.callback(Output('parasgb5', 'style'),
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')])
+
+def options_features_sgb(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "SGB" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
+
+
+
+
 
 
 
