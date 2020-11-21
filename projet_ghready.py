@@ -1371,9 +1371,10 @@ def calcul_adl(df,vcible,variables):
     #récupération des labels des classes 
     catego=lda.classes_
     
+    #Calcul de la courbe ROC
     y_pred_proba = lda.best_estimator_.predict_proba(XTest)[::,1]
     y_scores=lda.best_estimator_.predict_proba(XTest)
-    
+    #on récupère les deux graphiques 
     fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores)
     
     return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
@@ -1421,76 +1422,71 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     #récupération des labels des classes 
     catego=lda.classes_
     
+    #Calcul de la courbe ROC 
     y_pred_proba = lda.predict_proba(XTest)[::,1]
     y_scores=lda.predict_proba(XTest)
-    
+    #Récupération des 2 graphiques 
     fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores)
     
     
     return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
 
-
+#Fonction pour créer les graphiques associés à la courbe ROC pour l'ADL 
 def courbe_roc_adl (yTest,y_pred_proba,y_scores):
+    
+    #Cas où on a plus de 2 classes 
     if y_scores.shape[1]>2:
+        
+        y_onehot = pd.get_dummies(yTest)#, columns=lda.classes_)
+        
+        fig_ROC = go.Figure()
+        fig_ROC.add_shape(type='line', line=dict(dash='dash'),x0=0, x1=1, y0=0, y1=1)       
                     
-                    #fig=plt.plot(fpr,tpr,label="data 1, auc="+str(auc))
-                    #fig=sn.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
-                    #fig=sn.heatmap(confusion_matrix, annot=True)
-                     #   y_scores=lda.best_estimator_.predict_proba(XTest)
-                        y_onehot = pd.get_dummies(yTest)#, columns=lda.classes_)
+        for i in range(y_scores.shape[1]):
+            y_true = y_onehot.iloc[:, i]
+            y_score = y_scores[:, i]
 
-                    # Create an empty figure, and iteratively add new lines
-                    # every time we compute a new class
-                        fig_ROC = go.Figure()
-                        fig_ROC.add_shape(
-                                    type='line', line=dict(dash='dash'),
-                                    x0=0, x1=1, y0=0, y1=1
-                                    )       
-                    
-                        for i in range(y_scores.shape[1]):
-                            y_true = y_onehot.iloc[:, i]
-                            y_score = y_scores[:, i]
+            fpr, tpr, _ = roc_curve(y_true, y_score)
+            auc_score = roc_auc_score(y_true, y_score)
 
-                            fpr, tpr, _ = roc_curve(y_true, y_score)
-                            auc_score = roc_auc_score(y_true, y_score)
+            name = f"{y_onehot.columns[i]} (AUC={auc_score:.2f})"
+            fig_ROC.add_trace(go.Scatter(x=fpr, y=tpr, name=name, mode='lines'))
 
-                            name = f"{y_onehot.columns[i]} (AUC={auc_score:.2f})"
-                            fig_ROC.add_trace(go.Scatter(x=fpr, y=tpr, name=name, mode='lines'))
-
-                        fig_ROC.update_layout(
-                                        title="Courbes ROC",
-                                        xaxis_title='Taux de Faux Positifs',
-                                        yaxis_title='Taux de Vrai Positfs',
-                                        yaxis=dict(scaleanchor="x", scaleratio=1),
-                                        xaxis=dict(constrain='domain'),
-                                        width=500, height=500
-                                        )
-                        fig_thresh=px.line(title='Taux de vrais et faux positifs à chaque seuil')
+            fig_ROC.update_layout(
+                title="Courbes ROC",
+                xaxis_title='Taux de Faux Positifs',
+                yaxis_title='Taux de Vrai Positfs',
+                yaxis=dict(scaleanchor="x", scaleratio=1),
+                xaxis=dict(constrain='domain'),
+                width=700, height=500
+            )
+        #ce graphique n'est valable que lorsqu'on a 2 classes     
+        fig_thresh=px.line(title='Taux de vrais et faux positifs à chaque seuil')
+        
+    #Cas où on a 2 classes 
     else:
-                         auc = metrics.roc_auc_score(yTest, y_pred_proba)
-                         fpr, tpr, thresholds = metrics.roc_curve(yTest,  y_pred_proba)
-                         df1 = pd.DataFrame({
-                                        'Taux de Faux Positifs': fpr,
-                                        'Taux de Vrai Positfs': tpr
-                                        }, index=thresholds)
-                         df1.index.name = "Seuil"
-                         df1.columns.name = "Rate"
-                         fig_ROC = px.area(
-                                            x=fpr, y=tpr,
-                                            title=f'Courbe ROC (AUC={round(auc,3)})',
-                                            labels=dict(x='Taux de Faux Positifs', y='Taux de Vrais Positifs'),
-                                            width=450, height=500
-                                            ) 
-                         fig_ROC.add_shape(
-                                type='line', line=dict(dash='dash'),
-                                x0=0, x1=1, y0=0, y1=1
-                              )
-                         fig_thresh = px.line(
-                                    df1, color="Rate",title='Taux de vrais et faux positifs à chaque seuil',
-                                    width=450, height=500
-                                    )
-                         fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
-                         fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
+        auc = metrics.roc_auc_score(yTest, y_pred_proba)
+        fpr, tpr, thresholds = metrics.roc_curve(yTest,  y_pred_proba)
+        df1 = pd.DataFrame({
+            'Taux de Faux Positifs': fpr,
+            'Taux de Vrai Positfs': tpr
+        }, index=thresholds)
+        
+        df1.index.name = "Seuil"
+        df1.columns.name = "Rate"
+        fig_ROC = px.area(
+            x=fpr, y=tpr,
+            title=f'Courbe ROC (AUC={round(auc,3)})',
+            labels=dict(x='Taux de Faux Positifs', y='Taux de Vrais Positifs'),
+            #width=450, height=500
+        ) 
+        fig_ROC.add_shape(type='line', line=dict(dash='dash'),x0=0, x1=1, y0=0, y1=1)
+        fig_thresh = px.line(
+            df1, color="Rate",title='Taux de vrais et faux positifs à chaque seuil',
+            #width=450, height=500
+        )
+        fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
+        fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
     
     return fig_ROC, fig_thresh
     
@@ -1507,23 +1503,26 @@ def courbe_roc_adl (yTest,y_pred_proba,y_scores):
 def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename):
     figu=html.Div()
     if "Analyse Discriminante Linéaire" in value2 and radio:
-        if contents and variables:
+        
+        #on ne lance pas les calculs si on n'a pas tous les inputs nécessaires 
+        if contents and variables and vcible:
                 contents=contents[0]
                 filename=filename[0]
     
                 df=parse_contents(contents,filename)
-            #if radio:
+                
+                if radio:
                 #Choix manuel des paramètres 
-                if radio == "manu": 
-                    if solver=="svd":
+                 if radio == "manu": 
+                     if solver=="svd":
                         table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,None)
-                    elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
+                     elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
                             table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,shr)
-                    else:
+                     else:
                         table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
                     
-                    #Choix automatique des paramètres 
-                elif radio=="opti":
+                #Choix automatique des paramètres 
+                 else :
                     table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
              
                 #récupération de la précision et du rappel par classe dans un vecteur : pour l'affichage graphique 
@@ -1576,11 +1575,11 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                 
                     dcc.Graph(id='figadl2', figure=fig2),
                     
-                    html.Div([dcc.Graph(id='ROC', figure=yscore),
-                                              dcc.Graph(id='Thresh', figure=ft)
-                                             ],style={'columnCount': 2}),
-                   # dcc.Graph(id='ROC', figure=yscore),
-                  #  dcc.Graph(id='Thresh', figure=ft)
+                    #html.Div([dcc.Graph(id='ROC', figure=yscore,style={'width':'30%'}),
+                    #                          dcc.Graph(id='Thresh', figure=ft)
+                    #                         ],style={'columnCount': 2}),
+                    dcc.Graph(id='ROC', figure=yscore),
+                    dcc.Graph(id='Thresh', figure=ft)
                 
                     ],style={ 'textAlign': 'center'})
                 
