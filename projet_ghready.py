@@ -43,24 +43,23 @@ colors = {
 
 
 
-# Dessiner layout 
-
-
+#------------------------------------------------Dessiner layout-------------------------------------------------- 
 
 
 app.layout = html.Div([
     
+    #1ère colonne du layout 
     html.Div([ 
     
         #Glisser-Déposer 
         dcc.Upload(
             id='upload-data',
             children=html.Div([
-                'Drag and Drop or ',
-                html.A('Select Files')
+                'Glissez Déposez ou ',
+                html.A('Chargez un fichier')
             ]),
             style={
-                'width': '50%',
+                'width': '70%',
                 'height': '60px',
                 'lineHeight': '60px',
                 'borderWidth': '1px',
@@ -72,7 +71,8 @@ app.layout = html.Div([
             # Allow multiple files to be uploaded
             multiple=True
         ),
-    
+        
+        #Affichage du nom du fichier chargé 
         html.Div(id='output-data-upload',
              style={ 'width': '50%'} 
         ),       
@@ -96,7 +96,7 @@ app.layout = html.Div([
 
         dcc.Dropdown(
             id='algo',
-            children=html.Div([ 'Choisir variable cible' ]),
+            children=html.Div([ 'Choisir algo' ]),
             placeholder="Choix de l'algorithme",
             options=[ {'label':'data', 'value': 'data'}],
             multi=True,
@@ -107,7 +107,7 @@ app.layout = html.Div([
 
         dcc.Dropdown(
             id='predire',
-            children=html.Div(['Choisir variable cible']),
+            children=html.Div(['Choisir variables explicatives']),
             placeholder="Choix des variables prédictives", 
             style={'backgroundColor': '#FFCB77'},
             options=[ ],
@@ -122,15 +122,19 @@ app.layout = html.Div([
   
         html.Div(id='graph_PCA',),
     
+    #Fin de la première colonne
     ], style={'width': '30%', 'display': 'inline-block'}) ,
     
+    #2è colonne 
     html.Div([ 
 
        #Création d'onglets pour afficher les résultats des différentes méthodes 
        html.Div(id='div_onglets', className='control-tabs', children=[
             dcc.Tabs(id='tabs_onglets', value='tabs', children=[
-            dcc.Tab(id='tab1', value='tab-1',children=[
-                 html.Div(id='para', children=
+            
+                #Onglet 1
+                dcc.Tab(id='tab1', value='tab-1',children=[
+                    html.Div(id='para', children=
                           [dcc.Dropdown(
                               id='parameter',
                               children=html.Div(['Choisir variable cible' ]),
@@ -141,58 +145,57 @@ app.layout = html.Div([
                               className='stockselector',
                               #value=[]
                           ), ] , style= {'display': 'none'}
-                ),
-                 html.Div(id='paraRegLog_1', children=
-                     [dcc.Dropdown(id='paraRegLog1',children=html.Div([
-                                                         'Choisir C', 
-                                                                   ]),
-                                                 placeholder="Choix des parametres C",
-                                                 options=[{'label':f'c={name}', 'value': name} for name in list(np.logspace(-4, 4, 20))],
-                                                 multi=False,
-                                                 style={'backgroundColor': '#FFCAB1'},
-                                                 className='stockselector',
-           ),], style= {'display': 'none'}),        
+                    ),
+                    
+                    html.Div(id='paraRegLog_1', children=[
+                        dcc.Dropdown(
+                            id='paraRegLog1',children=
+                            html.Div(['Choisir C']),
+                            placeholder="Choix des parametres C",
+                            options=[{'label':f'c={name}', 'value': name} for name in list(np.logspace(-4, 4, 20))],
+                            multi=False,
+                            style={'backgroundColor': '#FFCAB1'},
+                            className='stockselector',
+                        )], style= {'display': 'none'}),        
             
-             html.Div(id='paraRegLog_2', children=
-                     [dcc.Dropdown(id='paraRegLog2',children=html.Div([
-                                                         'Choisir pelnaty', 
-                                                                   ]),
-                                                 placeholder="Choix de penalty",
-                                                 options=[{'label':f'pelnaty={name}', 'value': name} for name in ['l2', 'none']],
-                                                 multi=False,
-                                                 style={'backgroundColor': '#FFCAB1'},
-                                                 className='stockselector',
-           ),], style= {'display': 'none'}),           
-                html.Div(id='acc'),
-                html.Div(id='graph1',),
-                html.Div(id='reglog')
+                     html.Div(id='paraRegLog_2', children=[
+                         dcc.Dropdown(id='paraRegLog2',children=
+                            html.Div(['Choisir pelnaty']),
+                            placeholder="Choix de penalty",
+                            options=[{'label':f'pelnaty={name}', 'value': name} for name in ['l2', 'none']],
+                            multi=False,
+                            style={'backgroundColor': '#FFCAB1'},
+                            className='stockselector',
+                         )], style= {'display': 'none'}),   
+                     
+                     html.Div(id='acc'),
+                     html.Div(id='graph1',),
+                     html.Div(id='reglog')
                 ]),
-            
-            
-            
+                
+            #Onglet 2  
             dcc.Tab(id="tab2", value='tab-2',children=[html.Div(id='param_dtr', children=
                         [dcc.Dropdown(id="radio_dtr",
                             options=[
                                 {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
-                           
-                            
                             value='Paramètres optimaux',
-                            style={'width':'75%'}
-                            
+                            style={'width':'75%'}   
                         ),],style={'display': 'none'}),  
-                   html.Div(id='paradtr1',children=[dcc.Dropdown(
-                              id='depth_dtr',
-                              #children=html.Div(['Choisir variable cible' ]),
-                              placeholder="Choix du max_depth",
-                              options=[{'label':name, 'value': name} for name in [3,6,9,12]],
-                              multi=False,
-                              style={'width':'75%'},
-                              className='stockselector',
-                        ),],style= {'display': 'none'}),
+                                                       
+                        html.Div(id='paradtr1',children=[
+                            dcc.Dropdown(
+                                id='depth_dtr',
+                                #children=html.Div(['Choisir variable cible' ]),
+                                placeholder="Choix du max_depth",
+                                options=[{'label':name, 'value': name} for name in [3,6,9,12]],
+                                multi=False,
+                                style={'width':'75%'},
+                                className='stockselector',
+                            )
+                        ],style= {'display': 'none'}),
 
-
-
-                   html.Div(id='paradtr2',children=[dcc.Dropdown(
+                       html.Div(id='paradtr2',children=[
+                           dcc.Dropdown(
                               id='sample_dtr',
                               #children=html.Div(['Choisir variable cible' ]),
                               placeholder="Choix du min_samples_leaf",
@@ -200,9 +203,11 @@ app.layout = html.Div([
                               multi=False,
                               style={'width':'75%'},
                               className='stockselector'
-                        ),],style={'display': 'none'}),
+                          )
+                       ,],style={'display': 'none'}),
                         
-                    html.Div(id='paradtr3',children=[dcc.Dropdown(
+                       html.Div(id='paradtr3',children=[
+                           dcc.Dropdown(
                               id='criterion_dtr',
                               #children=html.Div(['Choisir variable cible' ]),
                               placeholder="Choix du criterion",
@@ -265,16 +270,23 @@ app.layout = html.Div([
             
 
             
+            #Onglet 3
             dcc.Tab(id="tab3", value='tab-3',children=[
+                
+                #Contrôles pour les hyper paramètres de l'ADL 
                 html.Div(id='param_adl', children=[
+                        #Radio buttons ADL : optimal/manuel
                         dcc.RadioItems(id="radio_adl",
                             options=[
                                 {'label': 'Paramètres optimaux', 'value': 'opti'},
                                 {'label': 'Paramètres manuels', 'value': 'manu'}
                             ],
+                            #par défaut on applique les paramètres optimaux 
                             value='opti',
                             labelStyle={'display': 'inline-block'}
                         ),  
+                        
+                        #Dropdown choix du solver ADL 
                         dcc.Dropdown(
                               id='solver_adl',
                                   #children=html.Div(['Choisir variable cible' ]),
@@ -284,6 +296,8 @@ app.layout = html.Div([
                               style={'width':'75%'},
                               className='stockselector',
                         ),
+                        
+                        #Dropdown choix du shinkrage ADL
                         dcc.Dropdown(
                               id='shrinkage_adl',
                               #children=html.Div(['Choisir variable cible' ]),
@@ -295,54 +309,100 @@ app.layout = html.Div([
                         )
                         ] , style= {'display': 'none'}
                 ),
-                html.Div(id='neuron'),
-                 #html.Div(id='adl'),
-                  html.Div(id='graph2',),
-                  html.Div(id='graph_adl')
-                ]),
-            
+                
+                
+                html.Div(id='param_sgb', children=
+                        [dcc.Dropdown(id="radio_sgb",
+                            options=[
+                                {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
+                            value='Paramètres manuels',
+                            style={'width':'75%'}   
+                        ),],style={'display': 'none'}),  
+                
+                
+                
+                 html.Div(id='parasgb1',children=[
+                            dcc.Dropdown(
+                                id='n_estimators_sgb',
+                                #children=html.Div(['Choisir variable cible' ]),
+                                placeholder="Choix du n_estimators",
+                                options=[{'label':name, 'value': name} for name in [16,32,64,100,200]],
+                                multi=False,
+                                style={'width':'75%'},
+                                className='stockselector',
+                            )
+                        ],style= {'display': 'none'}),
 
-            ]),  
+                       html.Div(id='parasgb2',children=[
+                           dcc.Dropdown(
+                              id='learning_rate_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du learning_rate",
+                              options=[{'label':name, 'value': name} for name in [0.25,0.1,0.05,0.025, 0.01]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                          )
+                       ,],style={'display': 'none'}),
+                        
+                       html.Div(id='parasgb3',children=[
+                           dcc.Dropdown(
+                              id='max_depth_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du max_depth",
+                              options=[{'label':name, 'value': name} for name in [1,2,4,8]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                           )
+                        ,], style={'display': 'none'}),
+                       
+                       
+                       html.Div(id='parasgb4',children=[
+                           dcc.Dropdown(
+                              id='sub_sample_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du sub_sample",
+                              options=[{'label':name, 'value': name} for name in [0.5,0.9,1]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                           )
+                        ,], style={'display': 'none'}),
+                       
+                       
+                        html.Div(id='parasgb5',children=[
+                           dcc.Dropdown(
+                              id='max_features_sgb',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du max_features",
+                              options=[{'label':name, 'value': name} for name in [0.5,0.75]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                           )
+                        ,], style={'display': 'none'}),
+                       
+                
+                
+                
+                html.Div(id='neuron'),
+                html.Div(id='graph2',),
+                html.Div(id='graph_adl')
+            ]),
+        ]),  
             #On inclut tous les éléments graphiques dont on a besoin 
             # html.Div(id='onglets_content',children=[
             #     html.Div(id='gradient_class'),
             #     html.Div(id='ensemble'),                  
             #     ])
         
-        ]),
-    ],style={'width': '70%', 'display': 'inline-block', 'vertical-align': 'top'})
+    ]),
+  ],style={'width': '70%', 'display': 'inline-block', 'vertical-align': 'top'})
      
-#Fin du layout 
-])
+])    
+#--------------------------------------Fin du layout------------------------------------------------- 
 
-
-#Affichage du contenu spécifique à chaque onglet 
-# @app.callback(Output('onglets_content', 'children'),
-#               [Input('tabs_onglets', 'value')])
-
-# def update_content_ongglets(tab):
-    
-#     if tab == 'tab-1':
-#         return html.Div([
-#             html.Div(id='acc'),
-#             html.Div(id='graph1',),
-#             html.Div(id='reglog'),
-           
-    
-#         ])
-#     elif tab=="tab-2":
-#         return html.Div([
-#             html.Div(id='dtr_continue'),
-#             html.Div(id='dtc_continue'),
-#             html.Div(id='graph',)
-#             html.Div(id='graph_dtc')
-#             ])
-#     elif tab == 'tab-3':
-#         return html.Div([
-#             html.Div(id='graph_adl'),
-#              html.Div(id='neuron'),
-#              html.Div(id='graph2',)
-#         ])
 
 
 #Modification du label de chaque onglet en fonction du type de la variable cible 
@@ -399,10 +459,7 @@ def update_label_tab3(cible,contents,filename):
 
 
 
-
-# Fonction qui détermine les variables qualitatives/quantitatives du CIBLE
-
-
+# Fonction qui détermine si la variable cible est qualitative ou quantitative 
 def QT_function0(df,value):
     out=[]
     if str(df.dtypes[str(value)])=='object':
@@ -413,8 +470,6 @@ def QT_function0(df,value):
         else:
             out="Quantitative"
     return str(out)
-
-
 
 
 #Chargement du fichier 
@@ -468,7 +523,7 @@ def tabletype(value,contents,filename):
 """
 
 
-
+#Affichage du type de la variable cible 
 @app.callback(Output('pre_algo', 'children'),
               [Input('cible', 'value')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
@@ -488,10 +543,7 @@ def update_output(value, contents,filename):
     return child
 
 
-
-################ PRPOSE ALGO POUR CHAQUE VARIABLE ############################
-
-
+#Obtention liste choix des algo en fonction du type de la variable cible 
 def QT_function(value):
     output=[]
 #    if str(df.dtypes[str(value)])=='object':
@@ -526,12 +578,10 @@ def QT_function(value):
 #         options=[]
 #     return options
 
+#Mise à jour du dropdown avec le choix des algos
 @app.callback(Output('algo', 'options'),
               [Input('cible', 'value')],[Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
-
-
-   
 
 def update_output00(cible,contents,filename): 
     options = []   
@@ -547,9 +597,7 @@ def update_output00(cible,contents,filename):
 
 
 
-# Mise à jour dropdown
-
-
+# Mise à jour dropdown du choix de la variable cible 
 @app.callback(Output('cible', 'options'),
               [Input('upload-data', 'contents')], 
               [State('upload-data', 'filename')])
@@ -565,9 +613,7 @@ def update_output1(contents, filename):
                                                                                  # 'value':'data'}]
     return options
     
-
-
-
+#Mise à jour dropdown du choix des variables explicatives 
 @app.callback(Output('predire', 'options'),
               [Input('upload-data', 'contents'),
               Input('cible','value')], 
@@ -584,6 +630,41 @@ def update_output2(contents, value,filename):
             del df[value]
         options=[{'label':name, 'value': name} for name in df.columns.tolist()]
     return options
+
+
+# Mise à jour lAffichage du fichier chargé 
+@app.callback(Output('output-data-upload', 'children'),
+              [Input('upload-data', 'contents')],
+              [State('upload-data', 'filename')])
+
+def update_table(contents, filename):
+    table = html.Div()
+
+    if contents:
+        contents = contents[0]
+        filename = filename[0]
+        df = parse_contents(contents, filename)
+
+        table = html.Div([
+            html.H5(filename)#,
+         #   dash_table.DataTable(
+         #       data=df.head(10).to_dict('rows'),
+          #      columns=[{'name': i, 'id': i} for i in df.columns] #df.columns
+          #  )#,
+           # html.Hr(),
+           # html.Div('Raw Content'),
+           # html.Pre(contents[0:200] + '...', style={
+            #   'whiteSpace': 'pre-wrap',
+            #    'wordBreak': 'break-all'
+            #})
+        ])
+    else : 
+        table = html.Div([
+            html.H5("Aucune donnée")])
+
+    return table
+              
+
 
 
 
@@ -612,7 +693,7 @@ def update_output2(contents, value,filename):
     
 
 
-
+#-----------------------------------Gestion des calculs---------------------------------------------
 
 
 ##############################################################################
@@ -708,20 +789,44 @@ def gradient(df,value,variables):
     
     
     
+    
+# hyperparametre fixe    
+    
+def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
+    
+    params = {'n_estimators': [para1],
+              'learning_rate': [para2],
+              'max_depth': [para3],
+              'subsample': [para4],
+              'max_features': [para5]}
+    gb = GradientBoostingRegressor()
+ 
+    df_bis=df.loc[:,variables]   
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
+    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
+    start=time()
+    gb_cv=GridSearchCV(gb, params, cv=KFold(5), n_jobs=-1)
+    gb_cv.fit(X_train,y_train)
+    end=time()
+    y_pre=gb_cv.best_estimator_.predict(X)
+    dict={'valeur reel':y, 'valeur predict': y_pre}
+    data_frame=pd.DataFrame(dict)
+    done=round(end-start,3)
+    score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
+    return [score, data_frame, done]
+    
+    
    
-
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
 
 
 ##############################################################################
-########################### DECISION TREE ####################################
+########################### DECISION TREE REGRESSOR ##########################
 ##############################################################################
 
 
@@ -781,7 +886,9 @@ def dtr_continue_params(df,value, variables,para1,para2,para3):
     return [acc, data_frame, done]
 
 
-# DECISION TREE CLASSIFIER
+##############################################################################
+########################### DECISION TREE CLASSIFIER ##########################
+##############################################################################
 
 
 
@@ -854,7 +961,6 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     catego = dt_cv.classes_
     return [mc_dtc,catego,met_dtc,acc,tps]
      
-    
     
 # Regression/reseau_neuronne/arbre_decision avec le meilleur parametre    
     
@@ -961,7 +1067,7 @@ def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2
                             if para1:
                                 if para2:
                                     if para3:
-                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])])]) 
+                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[0])])]) 
                                
      
     return children
@@ -973,10 +1079,12 @@ def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2
 
 
 @app.callback(Output('neuron', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')],[Input('radio_sgb','value')],[Input('n_estimators_sgb','value')],[Input('learning_rate_sgb','value')],[Input('max_depth_sgb','value')],
+              [Input('sub_sample_sgb','value')],  [Input('max_features_sgb','value')],
+              [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output8(value1,variables,contents,value2,filename):
+def update_output8(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename): 
     
     children = html.Div()
     if "SGB" in value2:
@@ -986,7 +1094,16 @@ def update_output8(value1,variables,contents,value2,filename):
             df=parse_contents(contents,filename) 
             if value1:
                 if variables:
-                    children=html.Div([html.Div(["Temps de calcul =", str(gradient(df, value1, variables)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])])]) 
+                    if params:
+                        if params=="Paramètres optimaux":
+                            children=html.Div([html.Div(["Temps de calcul =", str(gradient(df, value1, variables)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])])]) 
+                        if params=="Paramètres manuels":
+                            if para1:
+                                if para2:
+                                    if para3:
+                                        if para4:
+                                            if para5:
+                                                children=html.Div([html.Div(["Temps de calcul =", str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[0])])]) 
                                
      
     return children
@@ -1209,7 +1326,9 @@ html.Div(children=f"Score = {score}", style={
 ###########################           ADL        #############################
 ##############################################################################
 
+#Calcul de l'ADL avec les paramètres optimaux 
 def calcul_adl(df,vcible,variables):
+    
     y = df.loc[:,[str(vcible)]]
     X=df.loc[:,variables]
     pd.get_dummies(X)
@@ -1219,8 +1338,6 @@ def calcul_adl(df,vcible,variables):
     modele = LinearDiscriminantAnalysis() #Modèle
     params = {'solver':['svd', 'lsqr','eigen'], 'shrinkage':[None, 'auto']} #Paramètres à tester
 
-    
-    
     start = time()
     
     #instanciation - recherche des hyperparametres optimaux et validation croisee
@@ -1234,6 +1351,7 @@ def calcul_adl(df,vcible,variables):
     #score_moyen = round(np.mean(scores),3)
    
     done = time()
+    #Calcul du temps de calcul 
     tps = round(done - start,3)
     
     #Mean cross-validated score of the best_estimator
@@ -1246,15 +1364,17 @@ def calcul_adl(df,vcible,variables):
     
     #calcul des métriques par classe 
     met= metrics.classification_report(yTest,ypred,output_dict=True)
+    met2= metrics.classification_report(yTest,ypred)
     #calcul du taux d'erreur 
     err = round(1-metrics.accuracy_score(yTest,ypred),3)
     
     #récupération des labels des classes 
     catego=lda.classes_
     
-    return mc, err,catego,met,score_moyen,tps
+    return mc, err,catego,met,met2,score_moyen,tps
 
 
+#Calcul de l'ADL avec les paramètres manuels 
 def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     
     if pshr=="None":
@@ -1265,8 +1385,6 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     pd.get_dummies(X)
     #découpage entrainement / test 
     XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
-    
-    
     
     start = time()
     
@@ -1281,6 +1399,7 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     score_moyen = round(np.mean(scores),3)
    
     done = time()
+    #Calcul du temps de calcul 
     tps = round(done - start,3)
     
     #prediction 
@@ -1290,63 +1409,19 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     
     #calcul des métriques par classe 
     met= metrics.classification_report(yTest,ypred,output_dict=True)
+    met2= metrics.classification_report(yTest,ypred)
     #calcul du taux d'erreur 
     err = round(1-metrics.accuracy_score(yTest,ypred),3)
     
     #récupération des labels des classes 
     catego=lda.classes_
     
-    return mc, err,catego,met,score_moyen,tps
+    return mc, err,catego,met,met2,score_moyen,tps
 
 
+#------------------------------------------SORTIE DES ALGORITHMES--------------------------------------
 
-
-
-
-
-
-# Mise à jour les données
-
-
-@app.callback(Output('output-data-upload', 'children'),
-              [Input('upload-data', 'contents')],
-              [State('upload-data', 'filename')])
-
-def update_table(contents, filename):
-    table = html.Div()
-
-    if contents:
-        contents = contents[0]
-        filename = filename[0]
-        df = parse_contents(contents, filename)
-
-        table = html.Div([
-            html.H5(filename)#,
-         #   dash_table.DataTable(
-         #       data=df.head(10).to_dict('rows'),
-          #      columns=[{'name': i, 'id': i} for i in df.columns] #df.columns
-          #  )#,
-           # html.Hr(),
-           # html.Div('Raw Content'),
-           # html.Pre(contents[0:200] + '...', style={
-            #   'whiteSpace': 'pre-wrap',
-            #    'wordBreak': 'break-all'
-            #})
-        ])
-    else : 
-        table = html.Div([
-            html.H5("Aucune donnée")])
-
-    return table
-              
-
-
-
-# GRAPHE
-
-#ADL
-
-
+#Sortie ADL
 @app.callback(Output('graph_adl', 'children'),
               [Input('predire','value')],[Input('cible', 'value')] , [Input('solver_adl','value')],[Input('shrinkage_adl','value')],[Input('radio_adl','value')],[Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
@@ -1359,20 +1434,20 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
             filename=filename[0]
     
             df=parse_contents(contents,filename)
+            #Choix manuel des paramètres 
             if radio == "manu": 
                 if solver=="svd":
-                    table,err,catego,met,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,None)
+                    table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,None)
                 elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
-                    table,err,catego,met,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,shr)
+                    table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,shr)
                 else:
-                    table,err,catego,met,score_moyen,tps =calcul_adl(df, vcible, variables)
+                    table,err,catego,met,met2,score_moyen,tps =calcul_adl(df, vcible, variables)
+                    
+            #Choix automatique des paramètres 
             else:
-                table,err,catego,met,score_moyen,tps =calcul_adl(df, vcible, variables)
-            #test=""
-            #for cat in catego:
-             #   test=test+str(met[cat]["precision"])
+                table,err,catego,met,met2,score_moyen,tps =calcul_adl(df, vcible, variables)
              
-            #récupération de la précision et du rappel par classe dans un vecteur
+            #récupération de la précision et du rappel par classe dans un vecteur : pour l'affichage graphique 
             met_classe=[]
             for cat in catego:
                 met_classe.append(met[cat]["precision"])
@@ -1382,11 +1457,46 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
             #transformation du vecteur en matrice 
             met_classe=met_classe.reshape(len(catego),2)
             
-            fig=px.imshow(table,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Analyse Discriminante Linéaire : Matrice de confusion")
-            fig2=px.imshow(met_classe,x=["précision","rappel"],y=catego,color_continuous_scale="Tealgrn",title="Analyse Discrimante Linéaire : Indicateurs par classe ")
+            #récupération des métriques par classe pour affichage tableau 
+            met2=report_to_df(met2)
             
-           # figu=html.Div(children=["Analyse Discriminante Linéaire",dcc.Graph(id='figadl', figure=fig), "acc : "+str(acc)+"---test : "+str(met_classe)+"------ "+str(met),dcc.Graph(id='figadl2', figure=fig2)])
-            figu=html.Div(children=[html.H6("Temps de calcul : "+str(tps)),html.H6("Score moyen : "+str(score_moyen)),dcc.Graph(id='figadl', figure=fig),"Taux d'erreur : ",str(err),dcc.Graph(id='figadl2', figure=fig2)])
+            #Matrice de confusion graphique 
+            fig=px.imshow(table,
+                          labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),
+                          x=catego,y=catego,
+                          color_continuous_scale="Tealgrn",
+                          title="Matrice de confusion"
+            )
+            
+            #Métriques par classe graphiques 
+            fig2=px.imshow(met_classe,
+                           labels=dict(color="Valeurs"),
+                           x=["Précision","Rappel"],
+                           y=catego,
+                           color_continuous_scale="Tealgrn",
+                           title="Indicateurs par classe "
+            )
+            
+            #Sortie
+            figu=html.Div(children=[
+                html.H5("Temps de calcul : "+str(tps)),
+                
+                html.H6("Score moyen : "+str(score_moyen)),
+                
+                "Taux d'erreur : ",str(err),
+                
+                dash_table.DataTable(id='testmetadl',
+                                     #title= f'Evaluation(Taux d''erreur={acc})',
+                                     columns=[{"name": i, "id": i} for i in met2.columns],
+                                     data=met2.to_dict('rows'),
+                                     editable=True
+                ),
+                
+                dcc.Graph(id='figadl', figure=fig),
+                
+                dcc.Graph(id='figadl2', figure=fig2),
+                
+                ],style={ 'textAlign': 'center'})
          
                                
     return figu
@@ -1396,10 +1506,6 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
 
 
 # Arbre de decision : regressor
-
-
-
-
 
 @app.callback(Output('graph', 'children'),
               [Input('cible', 'value')], [Input('radio_dtr','value')],[Input('depth_dtr','value')],[Input('sample_dtr','value')],[Input('criterion_dtr','value')],
@@ -1469,10 +1575,11 @@ def update_output19(value1,para,variables,contents,value2,filename):
 
 
 @app.callback(Output('graph2', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('radio_sgb','value')],[Input('n_estimators_sgb','value')],[Input('learning_rate_sgb','value')],[Input('max_depth_sgb','value')],
+              [Input('sub_sample_sgb','value')],  [Input('max_features_sgb','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output29(value1,variables,contents,value2,filename):
+def update_output29(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename):
     figu=html.Div()
     if "SGB" in value2:
         if contents:
@@ -1481,34 +1588,51 @@ def update_output29(value1,variables,contents,value2,filename):
             df=parse_contents(contents,filename) 
             if value1: 
                 if variables:
-                    data_frame=gradient(df, value1, variables)[1]
-
-                    figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
-                               
+                    if params:
+                        if params=='Paramètres optimaux':
+                            data_frame=gradient(df, value1, variables)[1]
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
+                        if params=='Paramètres manuels':
+                            if para1:
+                                if para2:
+                                    if para3:
+                                        if para4:
+                                            if para5:
+                                                data_frame=gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[1]
+                                                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
     return figu
 
 
 
 
 
-# PCA
+#Représentation factorielle des données 
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 @app.callback(Output('graph_PCA', 'children'),
-              [Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
+              [Input('predire','value')],[Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
-def update_output30(value1,value2,contents,filename):
+def update_output30(variables,value1,value2,contents,filename):
     figu=html.Div()
     if contents:
         contents=contents[0]
         filename=filename[0]
         df=parse_contents(contents,filename) 
         df_bis=pd.get_dummies(df)
+        
+        
         if value1:
+            #Prise en compte des variables explicatives sélectionnées 
+            if variables and len(variables)>1:
+                X=df.loc[:,variables]
+            else:
+                X=df.drop(columns=[str(value1)])
+                X=pd.get_dummies(X)
+                
             if value2=="Quantitative":
-                X=df_bis.drop(columns=[str(value1)])
+                #X=df_bis.drop(columns=[str(value1)])
                 y=df_bis[str(value1)].to_numpy()
                 sc = StandardScaler() 
                 X_normalized = sc.fit_transform(X)  
@@ -1517,8 +1641,9 @@ def update_output30(value1,value2,contents,filename):
                 components=np.c_[components,y]
 #            fig = px.scatter_3d(components, x=0, y=1, z=2, labels={'0':'PC1', '1':'PC2', '2':'valeur réel'})
                 figu=html.Div(children=[dcc.Graph(id='fig1',  figure=px.scatter_3d(components, color=y, x=0, y=1, z=2, labels={'0':'PC1', '1':'PC2', '2':'valeur réel'}))])        
+            
             if value2=="Qualitative":
-                X=df.drop(columns=[str(value1)])
+                #X=df.drop(columns=[str(value1)])
                 y=df[str(value1)]
                 X=pd.get_dummies(X)
                 sc = StandardScaler() 
@@ -1531,6 +1656,8 @@ def update_output30(value1,value2,contents,filename):
                 loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
                 features=X.columns
                 fig=px.scatter(components, color=df[str(value1)], x=0, y=1, labels={'0':'PC1', '1':'PC2'})
+                
+                #Ajout de la sémantique des axes avec les variables d'origine 
                 for i, feature in enumerate(features):
                     fig.add_shape(
                         type='line',
@@ -1636,7 +1763,11 @@ def display_param_dtc(cible):
 
     return style
 
+    style={'display': 'none'}
+    if "SGB" in cible:
+        style={'width': '37.5%','display': 'block'}
 
+    return style
 
 @app.callback(Output('paradtc1', 'style'),
               [Input('radio_dtc', 'value')], [Input('algo', 'value')])
