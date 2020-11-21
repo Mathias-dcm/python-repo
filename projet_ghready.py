@@ -164,10 +164,12 @@ app.layout = html.Div([
                                                  className='stockselector',
            ),], style= {'display': 'none'}),           
                 html.Div(id='acc'),
-                html.Div(id='graph_dtc',),
                 html.Div(id='graph1',),
                 html.Div(id='reglog')
                 ]),
+            
+            
+            
             dcc.Tab(id="tab2", value='tab-2',children=[html.Div(id='param_dtr', children=
                         [dcc.Dropdown(id="radio_dtr",
                             options=[
@@ -209,13 +211,59 @@ app.layout = html.Div([
                               style={'width':'75%'},
                               className='stockselector'
                         ),], style={'display': 'none'}),
+                    
+                    
+                    html.Div(id='param_dtc', children=
+                        [dcc.Dropdown(id="radio_dtc",
+                            options=[
+                                {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
+                           
+                            
+                            value='Paramètres optimaux',
+                            style={'width':'75%'}
+                            
+                        ),],style={'display': 'none'}),      
+                    html.Div(id='paradtc1',children=[dcc.Dropdown(
+                              id='depth_dtc',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du max_depth",
+                              options=[{'label':name, 'value': name} for name in [3,6,9,12]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector',
+                        ),],style= {'display': 'none'}),
+
+
+                   html.Div(id='paradtc2',children=[dcc.Dropdown(
+                              id='sample_dtc',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du min_samples_leaf",
+                              options=[{'label':name, 'value': name} for name in list(np.arange(1,9,1))],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                        ),],style={'display': 'none'}),
+                        
+                    html.Div(id='paradtc3',children=[dcc.Dropdown(
+                              id='criterion_dtc',
+                              #children=html.Div(['Choisir variable cible' ]),
+                              placeholder="Choix du criterion",
+                              options=[{'label':name, 'value': name} for name in ["gini", "entropy"]],
+                              multi=False,
+                              style={'width':'75%'},
+                              className='stockselector'
+                        ),], style={'display': 'none'}),
+                    
+                 
+                    
                     html.Div(id='dtr_continue'),
                     html.Div(id='dtc_continue'),
+                    html.Div(id='graph_dtc'),
                     html.Div(id='graph',)
-                ])
-                ,
+           
+                ]),
             
-            
+
             
             dcc.Tab(id="tab3", value='tab-3',children=[
                 html.Div(id='param_adl', children=[
@@ -229,8 +277,8 @@ app.layout = html.Div([
                         ),  
                         dcc.Dropdown(
                               id='solver_adl',
-                              #children=html.Div(['Choisir variable cible' ]),
-                              placeholder="Choix du solver",
+                                  #children=html.Div(['Choisir variable cible' ]),
+                                  placeholder="Choix du solver",
                              # options=[{'label':'svd', 'value': 'svd'}]+[{'label':'lsqr', 'value': 'lsqr'}]+[{'label':'eigen','value':'eigen'}],
                               multi=False,
                               style={'width':'75%'},
@@ -252,6 +300,8 @@ app.layout = html.Div([
                   html.Div(id='graph2',),
                   html.Div(id='graph_adl')
                 ]),
+            
+
             ]),  
             #On inclut tous les éléments graphiques dont on a besoin 
             # html.Div(id='onglets_content',children=[
@@ -275,7 +325,6 @@ app.layout = html.Div([
 #     if tab == 'tab-1':
 #         return html.Div([
 #             html.Div(id='acc'),
-#             html.Div(id='graph_dtc',),
 #             html.Div(id='graph1',),
 #             html.Div(id='reglog'),
            
@@ -286,6 +335,7 @@ app.layout = html.Div([
 #             html.Div(id='dtr_continue'),
 #             html.Div(id='dtc_continue'),
 #             html.Div(id='graph',)
+#             html.Div(id='graph_dtc')
 #             ])
 #     elif tab == 'tab-3':
 #         return html.Div([
@@ -323,7 +373,11 @@ def update_label_tab2(cible,contents,filename):
         filename = filename[0]
         df = parse_contents(contents, filename)
         if cible:
-            return "Arbre de décision" 
+            type_var=QT_function0(df,cible)
+            if "Qualitative" in type_var:
+                return "Decision tree Classifier"
+            else:
+                return "Decision tree Regressor"
     return "Méthode 2"
 
 @app.callback(Output('tab3', 'label'),
@@ -342,6 +396,7 @@ def update_label_tab3(cible,contents,filename):
             else :
                 return "SGB" 
     return "Méthode 3"
+
 
 
 
@@ -729,9 +784,10 @@ def dtr_continue_params(df,value, variables,para1,para2,para3):
 # DECISION TREE CLASSIFIER
 
 
+
+
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import make_scorer
-from sklearn.metrics import r2_score, accuracy_score
+from sklearn.metrics import accuracy_score
 scoring = make_scorer(r2_score)
 
 def dtc_continue(df,value,variables):
@@ -744,19 +800,59 @@ def dtc_continue(df,value,variables):
     y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeClassifier()
+    start = time()
     dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
     acc=accuracy_score(y_test, dt_cv.best_estimator_.predict(X_test))
-    y_pre=dt_cv.best_estimator_.predict(X)
+    y_pre=dt_cv.best_estimator_.predict(X_test)
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
-    return [acc]
+
+    done = time()
+    tps = round(done - start,3)
+
+#    matrice de confusion
+    mc_dtc = metrics.confusion_matrix(y_test,y_pre)
+    
+    #calcul des métriques par classe 
+    met_dtc = metrics.classification_report(y_test,y_pre,output_dict=True)
+    
+    #récupération des labels des classes 
+    catego = dt_cv.classes_
+    return [mc_dtc,catego,met_dtc,acc,tps]
+   
 
 
+def dtc_continue_params(df,value,variables,para1,para2,para3):
+    
+    params = {"max_depth": [para1],
+              "min_samples_leaf": [para2],
+              "criterion": [para3]}
+    df_bis=df.loc[:,variables]
+    X=pd.get_dummies(df_bis)
+    y=df[str(value)]
+    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
+    dt = DecisionTreeClassifier()
+    start = time()
+    dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
+    dt_cv.fit(X_train,y_train)
+    acc=accuracy_score(y_test, dt_cv.best_estimator_.predict(X_test))
+    y_pre=dt_cv.best_estimator_.predict(X_test)
+#    dict={'classe réelle':y, 'classe predicte': y_pre}
+#    data_frame=pd.DataFrame(dict)
 
+    done = time()
+    tps = round(done - start,3)
 
-
-
+#    matrice de confusion
+    mc_dtc = metrics.confusion_matrix(y_test,y_pre)
+    
+    #calcul des métriques par classe 
+    met_dtc = metrics.classification_report(y_test,y_pre,output_dict=True)
+    
+    #récupération des labels des classes 
+    catego = dt_cv.classes_
+    return [mc_dtc,catego,met_dtc,acc,tps]
      
     
     
@@ -807,28 +903,15 @@ def update_output5(value1,para,variables,contents,value2,filename):
     return children 
 
 
-
-
-
-
-
-
-
-
-
-
-
 # Decision tree classifier
 
 
-
-
-
 @app.callback(Output('dtc_continue', 'children'),
-              [Input('cible', 'value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtc','value')],[Input('depth_dtc','value')],[Input('sample_dtc','value')],[Input('criterion_dtc','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_dtc(value1,contents,value2,filename):
+
+def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,filename):
     
     children = html.Div()
     if "Decision tree Classifier" in value2:
@@ -837,12 +920,18 @@ def update_output_dtc(value1,contents,value2,filename):
             filename=filename[0]
             df=parse_contents(contents,filename) 
             
-            if value1:
-                children=html.Div(["Accuracy_score of Decision Tree Classifier =",  str(dtc_continue(df, value1)[0])]) 
-                               
+            if value:
+                if variables:
+                    if params:
+                        if params=="Paramètres optimaux": 
+                            children=html.Div([html.Div(["Temps de calcul =", str(dtc_continue(df, value,variables)[4])]), html.Div([ "Accuracy of Tree Regressor =",  str(dtc_continue(df, value,variables)[3])])]) 
+                        if params=="Paramètres manuels":
+                            if para1:
+                                if para2:
+                                    if para3:
+                                         children=html.Div([html.Div(["Temps de calcul =", str(dtc_continue_params(df, value,variables, para1,para2,para3)[4])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtc_continue(df, value,variables)[3])])]) 
      
     return children
-
 
 
 
@@ -876,9 +965,6 @@ def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2
                                
      
     return children
-
-
-
 
 
 
@@ -1539,7 +1625,57 @@ def options_criterion_dtr(value,algo):
 
 
 
+@app.callback(Output('param_dtc', 'style'),
+              [Input('algo', 'value')])
 
+def display_param_dtc(cible):
+
+    style={'display': 'none'}
+    if "Decision tree Classifier" in cible:
+        style={'width': '37.5%','display': 'block'}
+
+    return style
+
+
+
+@app.callback(Output('paradtc1', 'style'),
+              [Input('radio_dtc', 'value')], [Input('algo', 'value')])
+
+def options_depth_dtc(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "Decision tree Classifier" in algo:
+            style={'width': '37.5%','display': 'block'}
+
+    return style
+
+
+
+@app.callback(Output('paradtc2', 'style'),
+              [Input('radio_dtc', 'value')], [Input('algo', 'value')])
+
+def options_sample_dtc(value, algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "Decision tree Classifier" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
+
+
+
+
+@app.callback(Output('paradtc3', 'style'),
+              [Input('radio_dtc', 'value')], [Input('algo', 'value')])
+
+def options_criterion_dtc(value,algo):
+
+    style={'display': 'none'}
+    if value=='Paramètres manuels':
+        if "Decision tree Classifier" in algo:
+            style={'width': '37.5%','display': 'block'}
+    return style
 
 
 
