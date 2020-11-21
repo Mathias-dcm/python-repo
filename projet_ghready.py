@@ -36,7 +36,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 colors = {
     "graphBackground": "#F5F5F5",
     "background": "#ffffff",
-    "text": "#000000"
+    "text": "#000000" 
 }
 
 
@@ -48,6 +48,7 @@ colors = {
 
 app.layout = html.Div([
     
+    html.H1("Interface d'analyse de données",style={ 'textAlign': 'center'}),
     #1ère colonne du layout 
     html.Div([ 
     
@@ -282,7 +283,7 @@ app.layout = html.Div([
                                 {'label': 'Paramètres manuels', 'value': 'manu'}
                             ],
                             #par défaut on applique les paramètres optimaux 
-                            value='opti',
+                            #value='opti',
                             labelStyle={'display': 'inline-block'}
                         ),  
                         
@@ -1430,73 +1431,74 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
     figu=html.Div()
     if "Analyse Discriminante Linéaire" in value2:
         if contents and variables:
-            contents=contents[0]
-            filename=filename[0]
+                contents=contents[0]
+                filename=filename[0]
     
-            df=parse_contents(contents,filename)
-            #Choix manuel des paramètres 
-            if radio == "manu": 
-                if solver=="svd":
-                    table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,None)
-                elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
-                    table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,shr)
+                df=parse_contents(contents,filename)
+            #if radio:
+                #Choix manuel des paramètres 
+                if radio == "manu": 
+                    if solver=="svd":
+                        table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,None)
+                    elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
+                            table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,shr)
+                    else:
+                        table,err,catego,met,met2,score_moyen,tps =calcul_adl(df, vcible, variables)
+                    
+                    #Choix automatique des paramètres 
                 else:
                     table,err,catego,met,met2,score_moyen,tps =calcul_adl(df, vcible, variables)
-                    
-            #Choix automatique des paramètres 
-            else:
-                table,err,catego,met,met2,score_moyen,tps =calcul_adl(df, vcible, variables)
              
-            #récupération de la précision et du rappel par classe dans un vecteur : pour l'affichage graphique 
-            met_classe=[]
-            for cat in catego:
-                met_classe.append(met[cat]["precision"])
-                met_classe.append(met[cat]["recall"])
+                #récupération de la précision et du rappel par classe dans un vecteur : pour l'affichage graphique 
+                met_classe=[]
+                for cat in catego:
+                    met_classe.append(met[cat]["precision"])
+                    met_classe.append(met[cat]["recall"])
             
-            met_classe=np.array(met_classe)
-            #transformation du vecteur en matrice 
-            met_classe=met_classe.reshape(len(catego),2)
+                met_classe=np.array(met_classe)
+                #transformation du vecteur en matrice 
+                met_classe=met_classe.reshape(len(catego),2)
             
-            #récupération des métriques par classe pour affichage tableau 
-            met2=report_to_df(met2)
+                #récupération des métriques par classe pour affichage tableau 
+                met2=report_to_df(met2)
             
-            #Matrice de confusion graphique 
-            fig=px.imshow(table,
+                #Matrice de confusion graphique 
+                fig=px.imshow(table,
                           labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),
                           x=catego,y=catego,
                           color_continuous_scale="Tealgrn",
                           title="Matrice de confusion"
-            )
+                )
             
-            #Métriques par classe graphiques 
-            fig2=px.imshow(met_classe,
+                #Métriques par classe graphiques 
+                fig2=px.imshow(met_classe,
                            labels=dict(color="Valeurs"),
                            x=["Précision","Rappel"],
                            y=catego,
                            color_continuous_scale="Tealgrn",
                            title="Indicateurs par classe "
-            )
+                )
             
-            #Sortie
-            figu=html.Div(children=[
-                html.H5("Temps de calcul : "+str(tps)),
+                #Sortie
+                figu=html.Div(children=[
+                    html.H5("Temps de calcul : "+str(tps)),
                 
-                html.H6("Score moyen : "+str(score_moyen)),
+                    html.H6("Score moyen : "+str(score_moyen)),
                 
-                "Taux d'erreur : ",str(err),
+                    "Taux d'erreur : ",str(err),
                 
-                dash_table.DataTable(id='testmetadl',
+                    dash_table.DataTable(id='testmetadl',
                                      #title= f'Evaluation(Taux d''erreur={acc})',
                                      columns=[{"name": i, "id": i} for i in met2.columns],
                                      data=met2.to_dict('rows'),
                                      editable=True
-                ),
+                    ),
                 
-                dcc.Graph(id='figadl', figure=fig),
+                    dcc.Graph(id='figadl', figure=fig),
                 
-                dcc.Graph(id='figadl2', figure=fig2),
+                    dcc.Graph(id='figadl2', figure=fig2),
                 
-                ],style={ 'textAlign': 'center'})
+                    ],style={ 'textAlign': 'center'})
          
                                
     return figu
@@ -1614,7 +1616,7 @@ from sklearn.decomposition import PCA
               [Input('predire','value')],[Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
-def update_output30(variables,value1,value2,contents,filename):
+def update_graph_ACP(variables,value1,value2,contents,filename):
     figu=html.Div()
     if contents:
         contents=contents[0]
@@ -1626,10 +1628,10 @@ def update_output30(variables,value1,value2,contents,filename):
         if value1:
             #Prise en compte des variables explicatives sélectionnées 
             if variables and len(variables)>1:
-                X=df.loc[:,variables]
+                X1=df.loc[:,variables]
             else:
-                X=df.drop(columns=[str(value1)])
-                X=pd.get_dummies(X)
+                X1=df.drop(columns=[str(value1)])
+            X=pd.get_dummies(X1)
                 
             if value2=="Quantitative":
                 #X=df_bis.drop(columns=[str(value1)])
@@ -1639,9 +1641,30 @@ def update_output30(variables,value1,value2,contents,filename):
                 pca = PCA(n_components=2)
                 components = pca.fit_transform(X_normalized) 
                 components=np.c_[components,y]
-#            fig = px.scatter_3d(components, x=0, y=1, z=2, labels={'0':'PC1', '1':'PC2', '2':'valeur réel'})
-                figu=html.Div(children=[dcc.Graph(id='fig1',  figure=px.scatter_3d(components, color=y, x=0, y=1, z=2, labels={'0':'PC1', '1':'PC2', '2':'valeur réel'}))])        
-            
+                fig = px.scatter_3d(components, x=0, y=1, z=2,color=2, labels={'0':'PC1', '1':'PC2', '2':'y observé'})
+                fig2 = px.scatter(components, x=0, y=1, color=2,labels={'0':'PC1', '1':'PC2', '2':'y observé'})
+                loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
+                features=X1.columns
+                #Ajout de la sémantique des axes avec les variables d'origine 
+                for i, feature in enumerate(features):
+                    if str(X1.dtypes[str(feature)])!='object':
+                        fig2.add_shape(
+                        type='line',
+                        x0=0, y0=0,
+                        x1=loadings[i, 0],
+                        y1=loadings[i, 1]
+                        )
+                        fig2.add_annotation(
+                        x=loadings[i, 0],
+                        y=loadings[i, 1],
+                        ax=0, ay=0,
+                        xanchor="center",
+                        yanchor="bottom",
+                        text=feature,
+                        )
+               # figu=html.Div(children=[dcc.Graph(id='fig_acp2',  figure=fig2)])        
+               # figu=html.Div(children=[dcc.Graph(id='fig_acp2',  figure=px.scatter(components, x=0, y=1, color=2,labels={'0':'PC1', '1':'PC2', '2':'y observé'})),dcc.Graph(id="testpca", figure=px.scatter_3d(components, x=0, y=1, z=2,color=2, labels={'0':'PC1', '1':'PC2', '2':'y observé'}))])        
+                figu=html.Div(children=[dcc.Graph(id='fig_acp2', figure=fig2),dcc.Graph(id='fig_acp1',figure=fig)])
             if value2=="Qualitative":
                 #X=df.drop(columns=[str(value1)])
                 y=df[str(value1)]
@@ -1676,7 +1699,6 @@ def update_output30(variables,value1,value2,contents,filename):
                 figu=html.Div(children=[dcc.Graph(id='fig1',  figure=fig)])
                 
     return figu
-
 
 
 
