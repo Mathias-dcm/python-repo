@@ -584,7 +584,7 @@ def QT_function(value):
               [Input('cible', 'value')],[Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
-def update_output00(cible,contents,filename): 
+def update_algo(cible,contents,filename): 
     options = []   
     if contents:
         contents = contents[0]
@@ -603,7 +603,7 @@ def update_output00(cible,contents,filename):
               [Input('upload-data', 'contents')], 
               [State('upload-data', 'filename')])
 
-def update_output1(contents, filename):
+def update_variable_cible(contents, filename):
     options = []
 
     if contents:
@@ -620,7 +620,7 @@ def update_output1(contents, filename):
               Input('cible','value')], 
               [State('upload-data', 'filename')])
 
-def update_output2(contents, value,filename):
+def update_variable_predire(contents, value,filename):
     options = []
 
     if contents:
@@ -963,25 +963,10 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     return [mc_dtc,catego,met_dtc,acc,tps]
      
     
-# Regression/reseau_neuronne/arbre_decision avec le meilleur parametre    
+# Regression    
     
-# Regression  
     
-#@app.callback(Output('accuracy', 'options'),
-#              [Input('cible', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
-#              [State('upload-data', 'filename')])
 
-#def update_output4(value1,contents, value2,filename):
-#    options = []
-#    if str(value2)=="Regression":
-#        if contents:
-#            contents=contents[0]
-#            filename=filename[0]
-#            df=parse_contents(contents,filename)
-#            if value1:
-#                options=[{'label': name, 'value': name} for name in [str(lin(df,value1)[0])] ]
-        #    value=[lin(df,value)]
-#    return  options  
     
 
 
@@ -991,7 +976,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
               [Input('cible', 'value')], [Input('parameter','value')], [Input('predire', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output5(value1,para,variables,contents,value2,filename):
+def update_result_regression(value1,para,variables,contents,value2,filename):
     children = html.Div()
     
     if "Regression" in value2:
@@ -1085,7 +1070,7 @@ def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2
               [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output8(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename): 
+def update_result_Boosting(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename): 
     
     children = html.Div()
     if "SGB" in value2:
@@ -1552,7 +1537,7 @@ def update_output_dtr_graph(value1,params,para1,para2,para3,variables,contents,v
               [Input('cible', 'value')],[Input('parameter', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output19(value1,para,variables,contents,value2,filename):
+def update_graph_Regression(value1,para,variables,contents,value2,filename):
     figu=html.Div()
     if "Regression" in value2:   
         if contents:
@@ -1581,7 +1566,7 @@ def update_output19(value1,para,variables,contents,value2,filename):
               [Input('sub_sample_sgb','value')],  [Input('max_features_sgb','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output29(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename):
+def update_graph_Boosting(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename):
     figu=html.Div()
     if "SGB" in value2:
         if contents:
@@ -1616,7 +1601,11 @@ from sklearn.decomposition import PCA
               [Input('predire','value')],[Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
+<<<<<<< Updated upstream
 def update_graph_ACP(variables,value1,value2,contents,filename):
+=======
+def update_graph_PCA(variables,value1,value2,contents,filename):
+>>>>>>> Stashed changes
     figu=html.Div()
     if contents:
         contents=contents[0]
