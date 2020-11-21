@@ -934,11 +934,15 @@ def dtc_continue(df,value,variables):
     
     #calcul des métriques par classe 
     met_dtc = metrics.classification_report(y_test,y_pre,output_dict=True)
+    met_dtc2= metrics.classification_report(y_test,y_pre)
+    
+    
+    #calcul du taux d'erreur 
+    err = round(1-metrics.accuracy_score(y_test,y_pre),3)
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
-    return [mc_dtc,catego,met_dtc,acc,tps]
-   
+    return [mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps]
 
 
 def dtc_continue_params(df,value,variables,para1,para2,para3):
@@ -955,7 +959,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
     acc=accuracy_score(y_test, dt_cv.best_estimator_.predict(X_test))
-    y_pre=dt_cv.best_estimator_.predict(X_test)
+    y_pre=dt_cv.best_estimator_.predict(X_test) 
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
 
@@ -967,10 +971,14 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     
     #calcul des métriques par classe 
     met_dtc = metrics.classification_report(y_test,y_pre,output_dict=True)
+    met_dtc2= metrics.classification_report(y_test,y_pre)
+    
+    #calcul du taux d'erreur 
+    err = round(1-metrics.accuracy_score(y_test,y_pre),3)
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
-    return [mc_dtc,catego,met_dtc,acc,tps]
+    return [mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps]
      
     
 # Regression    
@@ -1008,32 +1016,77 @@ def update_result_regression(value1,para,variables,contents,value2,filename):
 # Decision tree classifier
 
 
-@app.callback(Output('dtc_continue', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtc','value')],[Input('depth_dtc','value')],[Input('sample_dtc','value')],[Input('criterion_dtc','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
-              [State('upload-data', 'filename')])
-
+@app.callback(Output('graph_dtc', 'children'),
+[Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtc','value')],[Input('depth_dtc','value')],[Input('sample_dtc','value')],[Input('criterion_dtc','value')],
+[Input('upload-data', 'contents')], [Input('algo', 'value')],
+[State('upload-data' , 'filename')])
 
 def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,filename):
-    
-    children = html.Div()
+    figu=html.Div()
+    #children = html.Div()
     if "Decision tree Classifier" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
             df=parse_contents(contents,filename) 
-            
+            figu=html.Div(children=[html.P("tessssssst")])
             if value:
                 if variables:
+                    figu=html.Div(children=[html.P("variabales")])
                     if params:
+                        figu=html.Div(children=[html.P("param")])
                         if params=="Paramètres optimaux": 
-                            children=html.Div([html.Div(["Temps de calcul =", str(dtc_continue(df, value,variables)[4])]), html.Div([ "Accuracy of Tree Regressor =",  str(dtc_continue(df, value,variables)[3])])]) 
+                            mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps=dtc_continue_params(df, value, variables)    
                         if params=="Paramètres manuels":
                             if para1:
                                 if para2:
                                     if para3:
-                                         children=html.Div([html.Div(["Temps de calcul =", str(dtc_continue_params(df, value,variables, para1,para2,para3)[4])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtc_continue(df, value,variables)[3])])]) 
+                                        mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps=dtc_continue(df, value, variables)
+                mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps=dtc_continue(df, value, variables)
+                met_dtc_classe=[]
+                for cat in catego:
+                    met_dtc_classe.append(met_dtc[str(cat)]["precision"])
+                    met_dtc_classe.append(met_dtc[str(cat)]["recall"])
+                met_dtc_classe=np.array(met_dtc_classe)
+                met_dtc_classe=met_dtc_classe.reshape(len(catego),2)
+                met_dtc2=report_to_df(met_dtc2)
+                
+                fig=px.imshow(mc_dtc, 
+                              labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),
+                              x=catego,y=catego,
+                              color_continuous_scale="Tealgrn", 
+                              title="Matrice de confusion"
+                )
+                            
+                fig2=px.imshow(met_dtc_classe,
+                               labels=dict(color="Valeurs"),
+                               x=["Précision","Rappel"],
+                               y=catego,
+                               color_continuous_scale="Tealgrn",
+                               title="Indicateurs par classe "
+                )
+                #sortie
+                figu=html.Div(children=[
+                html.H5("Temps de calcul : "+str(tps)), 
+                
+                html.H6("Accuracy : "+str(acc)),
+                
+                "Taux d'erreur : ",str(err),
+                
+                dash_table.DataTable(id='testmetdtc',
+                #title= f'Evaluation(Taux d''erreur={acc})',
+                                    columns=[{"name": i, "id": i} for i in met_dtc2.columns],
+                                      data=met_dtc2.to_dict('rows'),
+                                      editable=True
+                                      ),
+                
+                                 dcc.Graph(id='figdtc', figure=fig),
+                
+                                 dcc.Graph(id='figdtc2', figure=fig2),
+                
+                                ],style={ 'textAlign': 'center'})
      
-    return children
+    return figu
 
 
 
@@ -1621,13 +1674,6 @@ def update_output_dtr_graph(value1,params,para1,para2,para3,variables,contents,v
                                          figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
                             
     return figu
-
-
-
-
-# Arbre de decision : classifier (matrice de confusion)
-
-
 
 
 
