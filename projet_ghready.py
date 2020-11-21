@@ -1810,8 +1810,83 @@ def options_criterion_dtc(value,algo):
 
 
 
-
-
+@app.callback(Output('param_sgb', 'style'), 
+              [Input('algo', 'value')]) 
+ 
+def display_param_sgb(cible): 
+ 
+    style={'display': 'none'} 
+    if "SGB" in cible: 
+        style={'width': '37.5%','display': 'block'} 
+ 
+    return style 
+ 
+ 
+ 
+@app.callback(Output('parasgb1', 'style'), 
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
+ 
+def options_estimator_sgb(value,algo): 
+ 
+    style={'display': 'none'} 
+    if value=='Paramètres manuels': 
+        if "SGB" in algo: 
+            style={'width': '37.5%','display': 'block'} 
+ 
+    return style 
+ 
+ 
+ 
+ 
+@app.callback(Output('parasgb2', 'style'), 
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
+ 
+def options_learningrate_sgb(value,algo): 
+ 
+    style={'display': 'none'} 
+    if value=='Paramètres manuels': 
+        if "SGB" in algo: 
+            style={'width': '37.5%','display': 'block'} 
+    return style 
+ 
+ 
+ 
+@app.callback(Output('parasgb3', 'style'), 
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
+ 
+def options_depth_sgb(value,algo): 
+ 
+    style={'display': 'none'} 
+    if value=='Paramètres manuels': 
+        if "SGB" in algo: 
+            style={'width': '37.5%','display': 'block'} 
+    return style 
+ 
+ 
+ 
+@app.callback(Output('parasgb4', 'style'), 
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
+ 
+def options_sample_sgb(value,algo): 
+ 
+    style={'display': 'none'} 
+    if value=='Paramètres manuels': 
+        if "SGB" in algo: 
+            style={'width': '37.5%','display': 'block'} 
+    return style 
+ 
+ 
+ 
+@app.callback(Output('parasgb5', 'style'), 
+              [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
+ 
+def options_features_sgb(value,algo): 
+ 
+    style={'display': 'none'} 
+    if value=='Paramètres manuels': 
+        if "SGB" in algo: 
+            style={'width': '37.5%','display': 'block'} 
+    return style 
 
 
 
