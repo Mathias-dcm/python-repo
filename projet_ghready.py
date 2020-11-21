@@ -231,11 +231,11 @@ app.layout = html.Div([
                     
                     html.Div(id='param_dtc', children=
                         [dcc.Dropdown(id="radio_dtc",
+                                      placeholder="Choix des paramètres",
                             options=[
-                                {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
+                                {'label': name, 'value': name} for name in ['Paramètres manuels','Paramètres optimaux']],
                            
                             
-                            value='Paramètres optimaux',
                             style={'width':'75%'}
                             
                         ),],style={'display': 'none'}),      
@@ -273,7 +273,6 @@ app.layout = html.Div([
                  
                     
                     html.Div(id='dtr_continue'),
-                    html.Div(id='dtc_continue'),
                     html.Div(id='graph_dtc'),
                     html.Div(id='graph',)
            
@@ -921,7 +920,7 @@ def dtc_continue(df,value,variables):
     start = time()
     dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
-    acc=accuracy_score(y_test, dt_cv.best_estimator_.predict(X_test))
+    score_moyen=dt_cv.best_score_
     y_pre=dt_cv.best_estimator_.predict(X_test)
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
@@ -942,7 +941,7 @@ def dtc_continue(df,value,variables):
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
-    return [mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps]
+    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps]
 
 
 def dtc_continue_params(df,value,variables,para1,para2,para3):
@@ -958,7 +957,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     start = time()
     dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
-    acc=accuracy_score(y_test, dt_cv.best_estimator_.predict(X_test))
+    score_moyen=dt_cv.best_score_
     y_pre=dt_cv.best_estimator_.predict(X_test) 
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
@@ -978,7 +977,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
-    return [mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps]
+    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps]
      
     
 # Regression    
@@ -1025,66 +1024,62 @@ def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,f
     figu=html.Div()
     #children = html.Div()
     if "Decision tree Classifier" in value2:
-        if contents:
+        #si marche pas, enlever value and variables et ne laisser que contents
+        if contents and value and variables:
             contents=contents[0]
             filename=filename[0]
             df=parse_contents(contents,filename) 
-            figu=html.Div(children=[html.P("tessssssst")])
+            
             if value:
-                if variables:
-                    figu=html.Div(children=[html.P("variabales")])
+                if variables:   
                     if params:
-                        figu=html.Div(children=[html.P("param")])
-                        if params=="Paramètres optimaux": 
-                            mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps=dtc_continue_params(df, value, variables)    
-                        if params=="Paramètres manuels":
-                            if para1:
-                                if para2:
-                                    if para3:
-                                        mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps=dtc_continue(df, value, variables)
-                mc_dtc,err,catego,met_dtc,met_dtc2,acc,tps=dtc_continue(df, value, variables)
-                met_dtc_classe=[]
-                for cat in catego:
-                    met_dtc_classe.append(met_dtc[str(cat)]["precision"])
-                    met_dtc_classe.append(met_dtc[str(cat)]["recall"])
-                met_dtc_classe=np.array(met_dtc_classe)
-                met_dtc_classe=met_dtc_classe.reshape(len(catego),2)
-                met_dtc2=report_to_df(met_dtc2)
-                
-                fig=px.imshow(mc_dtc, 
-                              labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),
-                              x=catego,y=catego,
-                              color_continuous_scale="Tealgrn", 
-                              title="Matrice de confusion"
-                )
+                        if params=="Paramètres manuels" and para1 and para2 and para3:
+                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps=dtc_continue_params(df, value, variables,para1,para2,para3)
+                        else: 
+                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps=dtc_continue(df,value,variables) 
                             
-                fig2=px.imshow(met_dtc_classe,
-                               labels=dict(color="Valeurs"),
-                               x=["Précision","Rappel"],
-                               y=catego,
-                               color_continuous_scale="Tealgrn",
-                               title="Indicateurs par classe "
-                )
-                #sortie
-                figu=html.Div(children=[
-                html.H5("Temps de calcul : "+str(tps)), 
+                        met_dtc_classe=[]
+                        for cat in catego:
+                                met_dtc_classe.append(met_dtc[str(cat)]["precision"])
+                                met_dtc_classe.append(met_dtc[str(cat)]["recall"])
+                        met_dtc_classe=np.array(met_dtc_classe)
+                        met_dtc_classe=met_dtc_classe.reshape(len(catego),2)
+                        met_dtc2=report_to_df(met_dtc2)
                 
-                html.H6("Accuracy : "+str(acc)),
+                        fig=px.imshow(mc_dtc, 
+                        labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),
+                        x=catego,y=catego,
+                        color_continuous_scale="Tealgrn", 
+                        title="Matrice de confusion"
+                        )
+                            
+                        fig2=px.imshow(met_dtc_classe,
+                        labels=dict(color="Valeurs"),
+                        x=["Précision","Rappel"],
+                        y=catego,
+                        color_continuous_scale="Tealgrn",
+                        title="Indicateurs par classe "
+                        )
+                        #sortie
+                        figu=html.Div(children=[
+                        html.H5("Temps de calcul : "+str(tps)), 
                 
-                "Taux d'erreur : ",str(err),
+                        html.H6("Score moyen : "+str(score_moyen)),
                 
-                dash_table.DataTable(id='testmetdtc',
-                #title= f'Evaluation(Taux d''erreur={acc})',
-                                    columns=[{"name": i, "id": i} for i in met_dtc2.columns],
-                                      data=met_dtc2.to_dict('rows'),
-                                      editable=True
-                                      ),
+                        "Taux d'erreur : ",str(err),
                 
-                                 dcc.Graph(id='figdtc', figure=fig),
+                        dash_table.DataTable(id='testmetdtc',
+                        #title= f'Evaluation(Taux d''erreur={acc})',
+                        columns=[{"name": i, "id": i} for i in met_dtc2.columns],
+                        data=met_dtc2.to_dict('rows'),
+                        editable=True
+                        ),
                 
-                                 dcc.Graph(id='figdtc2', figure=fig2),
+                        dcc.Graph(id='figdtc', figure=fig),
                 
-                                ],style={ 'textAlign': 'center'})
+                        dcc.Graph(id='figdtc2', figure=fig2),
+                
+                        ],style={ 'textAlign': 'center'})
      
     return figu
 
