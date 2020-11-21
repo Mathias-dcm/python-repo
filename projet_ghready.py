@@ -1371,7 +1371,12 @@ def calcul_adl(df,vcible,variables):
     #récupération des labels des classes 
     catego=lda.classes_
     
-    return mc, err,catego,met,met2,score_moyen,tps
+    y_pred_proba = lda.best_estimator_.predict_proba(XTest)[::,1]
+    y_scores=lda.best_estimator_.predict_proba(XTest)
+    
+    fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores)
+    
+    return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
 
 
 #Calcul de l'ADL avec les paramètres manuels 
@@ -1416,7 +1421,80 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     #récupération des labels des classes 
     catego=lda.classes_
     
-    return mc, err,catego,met,met2,score_moyen,tps
+    y_pred_proba = lda.predict_proba(XTest)[::,1]
+    y_scores=lda.predict_proba(XTest)
+    
+    fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores)
+    
+    
+    return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
+
+
+def courbe_roc_adl (yTest,y_pred_proba,y_scores):
+    if y_scores.shape[1]>2:
+                    
+                    #fig=plt.plot(fpr,tpr,label="data 1, auc="+str(auc))
+                    #fig=sn.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+                    #fig=sn.heatmap(confusion_matrix, annot=True)
+                     #   y_scores=lda.best_estimator_.predict_proba(XTest)
+                        y_onehot = pd.get_dummies(yTest)#, columns=lda.classes_)
+
+                    # Create an empty figure, and iteratively add new lines
+                    # every time we compute a new class
+                        fig_ROC = go.Figure()
+                        fig_ROC.add_shape(
+                                    type='line', line=dict(dash='dash'),
+                                    x0=0, x1=1, y0=0, y1=1
+                                    )       
+                    
+                        for i in range(y_scores.shape[1]):
+                            y_true = y_onehot.iloc[:, i]
+                            y_score = y_scores[:, i]
+
+                            fpr, tpr, _ = roc_curve(y_true, y_score)
+                            auc_score = roc_auc_score(y_true, y_score)
+
+                            name = f"{y_onehot.columns[i]} (AUC={auc_score:.2f})"
+                            fig_ROC.add_trace(go.Scatter(x=fpr, y=tpr, name=name, mode='lines'))
+
+                        fig_ROC.update_layout(
+                                        title="Courbes ROC",
+                                        xaxis_title='Taux de Faux Positifs',
+                                        yaxis_title='Taux de Vrai Positfs',
+                                        yaxis=dict(scaleanchor="x", scaleratio=1),
+                                        xaxis=dict(constrain='domain'),
+                                        width=500, height=500
+                                        )
+                        fig_thresh=px.line(title='Taux de vrais et faux positifs à chaque seuil')
+    else:
+                         auc = metrics.roc_auc_score(yTest, y_pred_proba)
+                         fpr, tpr, thresholds = metrics.roc_curve(yTest,  y_pred_proba)
+                         df1 = pd.DataFrame({
+                                        'Taux de Faux Positifs': fpr,
+                                        'Taux de Vrai Positfs': tpr
+                                        }, index=thresholds)
+                         df1.index.name = "Seuil"
+                         df1.columns.name = "Rate"
+                         fig_ROC = px.area(
+                                            x=fpr, y=tpr,
+                                            title=f'Courbe ROC (AUC={round(auc,3)})',
+                                            labels=dict(x='Taux de Faux Positifs', y='Taux de Vrais Positifs'),
+                                            width=450, height=500
+                                            ) 
+                         fig_ROC.add_shape(
+                                type='line', line=dict(dash='dash'),
+                                x0=0, x1=1, y0=0, y1=1
+                              )
+                         fig_thresh = px.line(
+                                    df1, color="Rate",title='Taux de vrais et faux positifs à chaque seuil',
+                                    width=450, height=500
+                                    )
+                         fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
+                         fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
+    
+    return fig_ROC, fig_thresh
+    
+    
 
 
 #------------------------------------------SORTIE DES ALGORITHMES--------------------------------------
@@ -1428,7 +1506,7 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
 
 def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename):
     figu=html.Div()
-    if "Analyse Discriminante Linéaire" in value2:
+    if "Analyse Discriminante Linéaire" in value2 and radio:
         if contents and variables:
                 contents=contents[0]
                 filename=filename[0]
@@ -1438,21 +1516,22 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                 #Choix manuel des paramètres 
                 if radio == "manu": 
                     if solver=="svd":
-                        table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,None)
+                        table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,None)
                     elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
-                            table,err,catego,met,met2,score_moyen,tps =calcul_adl_manuel(df, vcible, variables,solver,shr)
+                            table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,shr)
                     else:
-                        table,err,catego,met,met2,score_moyen,tps =calcul_adl(df, vcible, variables)
+                        table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
                     
                     #Choix automatique des paramètres 
-                else:
-                    table,err,catego,met,met2,score_moyen,tps =calcul_adl(df, vcible, variables)
+                elif radio=="opti":
+                    table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
              
                 #récupération de la précision et du rappel par classe dans un vecteur : pour l'affichage graphique 
                 met_classe=[]
                 for cat in catego:
-                    met_classe.append(met[cat]["precision"])
-                    met_classe.append(met[cat]["recall"])
+                    #Utiliser str() car sinon pose problème quand cible = 0/1
+                    met_classe.append(met[str(cat)]["precision"])
+                    met_classe.append(met[str(cat)]["recall"])
             
                 met_classe=np.array(met_classe)
                 #transformation du vecteur en matrice 
@@ -1496,8 +1575,17 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                     dcc.Graph(id='figadl', figure=fig),
                 
                     dcc.Graph(id='figadl2', figure=fig2),
+                    
+                    html.Div([dcc.Graph(id='ROC', figure=yscore),
+                                              dcc.Graph(id='Thresh', figure=ft)
+                                             ],style={'columnCount': 2}),
+                   # dcc.Graph(id='ROC', figure=yscore),
+                  #  dcc.Graph(id='Thresh', figure=ft)
                 
                     ],style={ 'textAlign': 'center'})
+                
+
+                         
          
                                
     return figu
@@ -1615,11 +1703,9 @@ from sklearn.decomposition import PCA
               [Input('predire','value')],[Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
-#<<<<<<< Updated upstream
-#def update_graph_ACP(variables,value1,value2,contents,filename):
-#=======
+
 def update_graph_PCA(variables,value1,value2,contents,filename):
-#>>>>>>> Stashed changes
+
     figu=html.Div()
     if contents:
         contents=contents[0]
