@@ -148,6 +148,16 @@ app.layout = html.Div([
                           ), ] , style= {'display': 'none'}
                     ),
                     
+                    
+                    html.Div(id='param_reglog', children=
+                        [dcc.Dropdown(id="radio_reglog",
+                            options=[
+                                {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
+    #                        value='Paramètres optimaux',
+                            style={'width':'75%'}   
+                        ),],style={'display': 'none'}),
+                    
+                    
                     html.Div(id='paraRegLog_1', children=[
                         dcc.Dropdown(
                             id='paraRegLog1',children=
@@ -179,7 +189,7 @@ app.layout = html.Div([
                         [dcc.Dropdown(id="radio_dtr",
                             options=[
                                 {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
-                            value='Paramètres optimaux',
+    #                        value='Paramètres optimaux',
                             style={'width':'75%'}   
                         ),],style={'display': 'none'}),  
                                                        
@@ -1115,164 +1125,168 @@ def report_to_df(report):
 
 
 @app.callback(Output('reglog', 'children'),
-              [Input('predire','value')],
+              [Input('predire','value')], [Input('radio_reglog', 'value')],
               [Input('paraRegLog1', 'value')],[Input('paraRegLog2', 'value')],
               [Input('cible', 'value')] , [Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_output_RL(variables,para1,para2,vcible,contents,value2,filename):
+def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename):
     if "Régression Logistique" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
             df=parse_contents(contents,filename)
             if variables: 
+                param_grid=0
                 if vcible:
                     start=time()
                     y = y=df[str(vcible)]
                     X=df.loc[:,variables]
-                    if para1:
-                        if para2:
-                            param_grid = [    
+                    if para:
+                        if para=='Paramètres manuels':
+                            if para1:
+                                if para2:
+                                    param_grid = [    
                                 {'penalty' : [para2],
                                  'C' : [para1],
                                  'solver' : ['lbfgs','newton-cg'],
                                  'max_iter' : [100, 1000,2500, 5000]
                                  }
                                 ]
-                        else:
-                            param_grid = [    
-                                {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
-                                 'C' : [para1],
-                                 'solver' : ['lbfgs','newton-cg'],
-                                 'max_iter' : [100, 1000,2500, 5000]
-                                 }
-                                ]
+#                                else:
+#                                    param_grid = [    
+#                                {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
+#                                 'C' : [para1],
+#                                 'solver' : ['lbfgs','newton-cg'],
+#                                 'max_iter' : [100, 1000,2500, 5000]
+#                                 }
+#                                ]
                             
-                    else:
-                        param_grid = [    
+                        if  para=='Paramètres optimaux':
+                            param_grid = [    
                             {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
                              'solver' : ['lbfgs','newton-cg'],#,'newton-cg','sag','saga'],
                              'C' : np.logspace(-4, 4, 20),
                              'max_iter' : [100, 1000,2500, 5000]
                              }
                             ]
-                    # split X and y into training and testing sets
-                    X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=0)
+                            
+                        if param_grid==0:
+                            return html.Div()
+                        if param_grid!=0:
+                            # split X and y into training and testing sets
+                            X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=0)
+                        
 
-                    # instantiate the model (using the default parameters)
-                    logreg = LogisticRegression(multi_class="multinomial")
+                            # instantiate the model (using the default parameters)
+                            logreg = LogisticRegression(multi_class="multinomial")
                     
-                    #Hyperparametre
-                    clf = GridSearchCV(logreg, param_grid = param_grid, cv = 3, verbose=True, n_jobs=-1)
+                            #Hyperparametre
+                            clf = GridSearchCV(logreg, param_grid = param_grid, cv = 3, verbose=True, n_jobs=-1)
                     
-                    clf.fit(X_train,y_train)
-                    acc=accuracy_score(y_test, clf.best_estimator_.predict(X_test))
-                    y_pred=clf.best_estimator_.predict(X_test)
-                    y_pred_proba = clf.best_estimator_.predict_proba(X_test)[::,1]
-                    y_scores=clf.best_estimator_.predict_proba(X_test)
-                    score=clf.best_score_
+                            clf.fit(X_train,y_train)
+                            acc=accuracy_score(y_test, clf.best_estimator_.predict(X_test))
+                            y_pred=clf.best_estimator_.predict(X_test)
+                            y_pred_proba = clf.best_estimator_.predict_proba(X_test)[::,1]
+                            y_scores=clf.best_estimator_.predict_proba(X_test)
+                            score=clf.best_score_
                     
-                    #score=r2_score(y_test,clf.best_estimator_.predict(X_test))
+                            #score=r2_score(y_test,clf.best_estimator_.predict(X_test))
                     
-                    # import the metrics class
-                    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
-                    confusion_matrix = pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted'])
-                    
-                    """
-                    fig = px.area(
-                    x=fpr, y=tpr,
-                    title='ROC Curve (AUC={auc(fpr, tpr):.4f})',
-                    labels=dict(x='False Positive Rate', y='True Positive Rate'),
-                        width=700, height=500
-                        )
-                    """
+                            # import the metrics class
+                            cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+                            confusion_matrix = pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted'])
+                        
+                        
+                            """
+                            fig = px.area(
+                            x=fpr, y=tpr,
+                            title='ROC Curve (AUC={auc(fpr, tpr):.4f})',
+                            labels=dict(x='False Positive Rate', y='True Positive Rate'),
+                            width=700, height=500
+                            )
+                            """
                     
                     # Evaluating model performance at various thresholds
                     
                    
                     
-                    if y_scores.shape[1]>2:
-                    
-                    #fig=plt.plot(fpr,tpr,label="data 1, auc="+str(auc))
-                    #fig=sn.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
-                    #fig=sn.heatmap(confusion_matrix, annot=True)
-                        y_scores=clf.best_estimator_.predict_proba(X_test)
-                        y_onehot = pd.get_dummies(y_test, columns=clf.best_estimator_.classes_)
-
+                            if y_scores.shape[1]>2:
+                                y_scores=clf.best_estimator_.predict_proba(X_test)
+                                y_onehot = pd.get_dummies(y_test, columns=clf.best_estimator_.classes_)
                     # Create an empty figure, and iteratively add new lines
-                    # every time we compute a new class
-                        fig_ROC = go.Figure()
-                        fig_ROC.add_shape(
+                    # every time we compute a new class 
+                                fig_ROC = go.Figure()
+                                fig_ROC.add_shape(
                                     type='line', line=dict(dash='dash'),
                                     x0=0, x1=1, y0=0, y1=1
                                     )       
                     
-                        for i in range(y_scores.shape[1]):
-                            y_true = y_onehot.iloc[:, i]
-                            y_score = y_scores[:, i]
+                                for i in range(y_scores.shape[1]):
+                                    y_true = y_onehot.iloc[:, i]
+                                    y_score = y_scores[:, i]
 
-                            fpr, tpr, _ = roc_curve(y_true, y_score)
-                            auc_score = roc_auc_score(y_true, y_score)
+                                    fpr, tpr, _ = roc_curve(y_true, y_score)
+                                    auc_score = roc_auc_score(y_true, y_score)
 
-                            name = f"{y_onehot.columns[i]} (AUC={auc_score:.2f})"
-                            fig_ROC.add_trace(go.Scatter(x=fpr, y=tpr, name=name, mode='lines'))
+                                    name = f"{y_onehot.columns[i]} (AUC={auc_score:.2f})"
+                                    fig_ROC.add_trace(go.Scatter(x=fpr, y=tpr, name=name, mode='lines'))
 
-                        fig_ROC.update_layout(
+                                    fig_ROC.update_layout(
                                         xaxis_title='Taux de Faux Positif',
                                         yaxis_title='Taux de Vrai Positf',
                                         yaxis=dict(scaleanchor="x", scaleratio=1),
                                         xaxis=dict(constrain='domain'),
                                         width=700, height=500
                                         )
-                        fig_thresh=go.Figure()
-                    else:
-                         auc = metrics.roc_auc_score(y_test, y_pred_proba)
-                         fpr, tpr, thresholds = metrics.roc_curve(y_test,  y_pred_proba)
-                         df1 = pd.DataFrame({
+                                    fig_thresh=go.Figure()
+                            else:
+                                auc = metrics.roc_auc_score(y_test, y_pred_proba)
+                                fpr, tpr, thresholds = metrics.roc_curve(y_test,  y_pred_proba)
+                                df1 = pd.DataFrame({
                                         'Taux de Faux Positif': fpr,
                                         'Taux de Vrai Positf': tpr
                                         }, index=thresholds)
-                         df1.index.name = "Seuil"
-                         df1.columns.name = "Rate"
-                         fig_ROC = px.area(
+                                df1.index.name = "Seuil"
+                                df1.columns.name = "Rate"
+                                fig_ROC = px.area(
                                             x=fpr, y=tpr,
                                             title=f'Courbe de ROC (AUC={auc})',
                                             labels=dict(x='False Positive Rate', y='True Positive Rate'),
                                             width=500, height=500
                                             ) 
-                         fig_ROC.add_shape(
+                                fig_ROC.add_shape(
                                 type='line', line=dict(dash='dash'),
                                 x0=0, x1=1, y0=0, y1=1
                               )
-                         fig_thresh = px.line(
+                                fig_thresh = px.line(
                                     df1, title='Taux de TP et Taux de FP à chaque seuil',
                                     width=700, height=500
                                     )
-                         fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
-                         fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
+                                fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
+                                fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
                          
                           
-                    indice=metrics.classification_report(y_test,y_pred)
-                    indice=report_to_df(indice)
-                    fig_hist = px.histogram(
+                            indice=metrics.classification_report(y_test,y_pred)
+                            indice=report_to_df(indice)
+                            fig_hist = px.histogram(
                                             x=y_pred_proba, color=y_test, nbins=50,
                                             labels=dict(color='True Labels', x='Score')
                                             )
                     #Matrice de confusion
-                    """
-                    fig_matcon=plt.figure()
-                    fig_matcon.add_subplot(111)
-                    sn.heatmap(cnf_matrix,annot=True,square=True,cbar=False,fmt="d")
-                    plt.xlabel("predicted")
-                    plt.ylabel("true")
-                    """
-                    catego=clf.classes_
+                            """
+                            fig_matcon=plt.figure()
+                            fig_matcon.add_subplot(111)
+                            sn.heatmap(cnf_matrix,annot=True,square=True,cbar=False,fmt="d")
+                            plt.xlabel("predicted")
+                            plt.ylabel("true")
+                            """
+                            catego=clf.classes_
                     #fig_matcon=ff.create_annotated_heatmap(cnf_matrix)
-                    fig_matcon=px.imshow(cnf_matrix,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Matrice de confusion")
-                    end=time()
-                    duration=(end-start)
-                    return html.Div([
+                            fig_matcon=px.imshow(cnf_matrix,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Matrice de confusion")
+                            end=time()
+                            duration=(end-start)
+                            return html.Div([
                                 
                                   html.H2(
                                                children=f"Temps de calcul = {duration}",
@@ -1601,11 +1615,11 @@ from sklearn.decomposition import PCA
               [Input('predire','value')],[Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
-<<<<<<< Updated upstream
-def update_graph_ACP(variables,value1,value2,contents,filename):
-=======
+#<<<<<<< Updated upstream
+#def update_graph_ACP(variables,value1,value2,contents,filename):
+#=======
 def update_graph_PCA(variables,value1,value2,contents,filename):
->>>>>>> Stashed changes
+#>>>>>>> Stashed changes
     figu=html.Div()
     if contents:
         contents=contents[0]
@@ -1705,6 +1719,77 @@ def update_output300(value):
         style={'width': '33.5%','display': 'block'}
 
     return style
+
+
+
+
+
+@app.callback(Output('param_reglog', 'style'), 
+              [Input('algo', 'value')]) 
+ 
+def display_param_sgb(cible): 
+ 
+    style={'display': 'none'} 
+    if "Régression Logistique" in cible: 
+        style={'width': '37.5%','display': 'block'} 
+ 
+    return style 
+ 
+ 
+ 
+@app.callback(Output('paraRegLog_1', 'style'), 
+              [Input('radio_reglog', 'value')], [Input('algo', 'value')]) 
+ 
+def options_parameter1_reglog(value,algo): 
+ 
+    style={'display': 'none'} 
+    if value=='Paramètres manuels': 
+        if "Régression Logistique" in algo: 
+            style={'width': '33.5%','display': 'block'} 
+ 
+    return style 
+ 
+ 
+ 
+ 
+@app.callback(Output('paraRegLog_2', 'style'), 
+              [Input('radio_reglog', 'value')], [Input('algo', 'value')]) 
+ 
+def options_parameter2_reglog(value,algo): 
+ 
+    style={'display': 'none'} 
+    if value=='Paramètres manuels': 
+        if "Régression Logistique" in algo: 
+            style={'width': '33.5%','display': 'block'} 
+    return style 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1932,36 +2017,36 @@ def options_solver_adl(radio):
         return []
 
 
-@app.callback(Output('paraRegLog_1', 'style'),
-              [Input('algo', 'value')])
+#@app.callback(Output('paraRegLog_1', 'style'),
+#              [Input('algo', 'value')])
 
 
-def update_outputParaRegLog1(value2):
+#def update_outputParaRegLog1(value2):
 
-    style={'display': 'none'}
-    if ("Régression Logistique" in value2):
-        style={'width': '33.5%','display': 'block'}
+#    style={'display': 'none'}
+#    if ("Régression Logistique" in value2):
+#        style={'width': '33.5%','display': 'block'}
 
-    return style
+#    return style
 
-@app.callback(Output('paraRegLog_2', 'style'),
-              [Input('algo', 'value')])
+#@app.callback(Output('paraRegLog_2', 'style'),
+#              [Input('algo', 'value')])
 
-def update_outputParaRegLog(value2):
+#def update_outputParaRegLog(value2):
 
-    style={'display': 'none'}
-    if ("Régression Logistique" in value2):
-        style={'width': '33.5%','display': 'block'}
+#    style={'display': 'none'}
+#    if ("Régression Logistique" in value2):
+#        style={'width': '33.5%','display': 'block'}
 
-    return style
+#    return style
 
 ### RESET DROPDOWN CIBLE
 
 
 
-@app.callback(Output('cible', 'value'), [Input('cible', 'options')])
-def callback11(value):
-    return ""
+#@app.callback(Output('cible', 'value'), [Input('cible', 'options')])
+#def callback11(value):
+#    return ""
 
 # @app.callback(Output('pre_algo', 'children'), [Input('pre_algo', 'children')])
 # def callback12(value):
@@ -1987,6 +2072,11 @@ def callback16(value):
 def callback17(value):
     return ""
 
+
+@app.callback(Output('cible', 'value'), [Input('upload-data', 'filename')])
+def callback11(value):
+    if value:
+        return ""
 
 
 
