@@ -50,7 +50,6 @@ from sklearn.decomposition import PCA
 
 
 
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -915,7 +914,6 @@ def dtr_continue_params(df,value, variables,para1,para2,para3):
 
 
 
-scoring = make_scorer(r2_score)
 
 def dtc_continue(df,value,variables):
     
@@ -928,9 +926,9 @@ def dtc_continue(df,value,variables):
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeClassifier()
     start = time()
-    dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
+    dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1, scoring='accuracy')
     dt_cv.fit(X_train,y_train)
-    score_moyen=round(dt_cv.best_score_,3)
+    accuracy_moyenne=round(dt_cv.best_score_,3)
     y_pre=dt_cv.best_estimator_.predict(X_test)
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
@@ -947,7 +945,7 @@ def dtc_continue(df,value,variables):
     
     
     #calcul du taux d'erreur 
-    err = round(1-metrics.accuracy_score(y_test,y_pre),3)
+    acc = round(metrics.accuracy_score(y_test,y_pre),3)
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
@@ -957,7 +955,7 @@ def dtc_continue(df,value,variables):
     #on récupère les deux graphiques 
     fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores,catego)
     
-    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,fig_ROC,fig_thresh]
+    return [mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,fig_ROC,fig_thresh]
 
 
 def dtc_continue_params(df,value,variables,para1,para2,para3):
@@ -968,12 +966,12 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     df_bis=df.loc[:,variables]
     X=pd.get_dummies(df_bis)
     y=df[str(value)]
-    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
+    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2, scoring='accuracy')
     dt = DecisionTreeClassifier()
     start = time()
     dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
-    score_moyen=round(dt_cv.best_score_,3)
+    accuracy_moyenne=round(dt_cv.best_score_,3)
     y_pre=dt_cv.best_estimator_.predict(X_test) 
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
@@ -989,7 +987,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     met_dtc2= metrics.classification_report(y_test,y_pre)
     
     #calcul du taux d'erreur 
-    err = round(1-metrics.accuracy_score(y_test,y_pre),3)
+    acc = round(metrics.accuracy_score(y_test,y_pre),3)
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
@@ -999,7 +997,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     #on récupère les deux graphiques 
     fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores,catego)
     
-    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,fig_ROC,fig_thresh]
+    return [mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,fig_ROC,fig_thresh]
      
     
 # Regression    
@@ -1050,9 +1048,9 @@ def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,f
                 if variables:   
                     if params:
                         if params=="Paramètres manuels" and para1 and para2 and para3:
-                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,figROC,figthresh=dtc_continue_params(df, value, variables,para1,para2,para3)
+                            mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,figROC,figthresh=dtc_continue_params(df, value, variables,para1,para2,para3)
                         else: 
-                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,figROC,figthresh=dtc_continue(df,value,variables) 
+                            mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,figROC,figthresh=dtc_continue(df,value,variables) 
                             
                         met_dtc_classe=[]
                         for cat in catego:
@@ -1080,9 +1078,9 @@ def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,f
                         figu=html.Div(children=[
                         html.H5("Temps de calcul : "+str(tps)), 
                 
-                        html.H6("Score moyen : "+str(score_moyen)),
+                        html.H6("Accuracy moyenne : "+str(accuracy_moyenne)),
                 
-                        "Taux d'erreur : ",str(err),
+                        "Accuracy du modèle : "+str(acc),
                 
                         dash_table.DataTable(id='testmetdtc',
                         #title= f'Evaluation(Taux d''erreur={acc})',
