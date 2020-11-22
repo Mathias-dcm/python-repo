@@ -452,7 +452,7 @@ def update_label_tab1(cible,contents,filename):
             if "Qualitative" in type_var:
                 return "Régression logistique" 
             else :
-                return "Régression" #D T classifier #adl   #reg  SGB  DT regressor 
+                return "Régression Ridge" #D T classifier #adl   #reg  SGB  DT regressor 
     return "Méthode 1"
 
 @app.callback(Output('tab2', 'label'),
