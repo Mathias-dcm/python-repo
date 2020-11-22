@@ -10,7 +10,9 @@ import dash_table
 
 import pandas as pd
 
+#--------A installer une seule fois 
 #pip install cufflinks --upgrade
+
 import cufflinks as cf
 from matplotlib import pyplot as plt
 import numpy as np
@@ -61,10 +63,6 @@ colors = {
     "text": "#000000" 
 }
 
-
-
-
-
 #------------------------------------------------Dessiner layout-------------------------------------------------- 
 
 
@@ -98,8 +96,9 @@ app.layout = html.Div([
         #Affichage du nom du fichier chargé 
         html.Div(id='output-data-upload',
              style={ 'width': '50%'} 
-        ),       
-    
+        ),  
+        
+        #Liste déroulante choix de la variable cible
         dcc.Dropdown(
             id='cible',
             children=html.Div(['Choisir variable cible']),
@@ -110,7 +109,8 @@ app.layout = html.Div([
             className='stockselector',
             #value=[]
         ),
-
+        
+        #Affichage type de la variable cible 
         html.Div(
             id='pre_algo',
             children=["Type de la variable cible"],
@@ -138,11 +138,8 @@ app.layout = html.Div([
             className='stockselector',
             #        value=['data']
         ),
-    
-        html.Div(id='tabletype'),
-        
-        html.Div(id='data'),
   
+        #Contenant de la Représentation factorielle des données 
         html.Div(id='graph_PCA',),
     
     #Fin de la première colonne
@@ -158,19 +155,20 @@ app.layout = html.Div([
                 #Onglet 1 : Régressions ridge et logistique 
                 dcc.Tab(id='tab1', value='tab-1',children=[
                     html.Div(id='para', children=
+                        #Paramètres régression ridge
                           [dcc.Dropdown(
                               id='parameter',
                               children=html.Div(['Choisir variable cible' ]),
                               placeholder="Choix des parametres pour la Régression (alpha)",
                               options=[{'label':'Le meilleur paramètre', 'value': 'Le meilleur paramètre'}]+[{'label':name, 'value': name} for name in list(np.logspace(-4,0,20))],
                               multi=False,
-                              style={'backgroundColor': '#FFCAB1'},
+                              #style={'backgroundColor': '#FFCAB1'},
                               className='stockselector',
                               #value=[]
                           ), ] , style= {'display': 'none'}
                     ),
                     
-                    
+                    #Paramètres régression logistique
                     html.Div(id='param_reglog', children=
                         [dcc.Dropdown(id="radio_reglog",
                             options=[
@@ -179,7 +177,7 @@ app.layout = html.Div([
                             style={'width':'75%'}   
                         ),],style={'display': 'none'}),
                     
-                    
+                    #Paramètres régression logistique
                     html.Div(id='paraRegLog_1', children=[
                         dcc.Dropdown(
                             id='paraRegLog1',children=
@@ -187,31 +185,32 @@ app.layout = html.Div([
                             placeholder="Choix des parametres C",
                             options=[{'label':f'c={name}', 'value': name} for name in list(np.logspace(-4, 4, 20))],
                             multi=False,
-                            style={'backgroundColor': '#FFCAB1'},
                             className='stockselector',
-                        )], style= {'display': 'none'}),        
-            
+                        )], style= {'display': 'none'}), 
+                    
+                    #Paramètres régression logistique
                      html.Div(id='paraRegLog_2', children=[
                          dcc.Dropdown(id='paraRegLog2',children=
                             html.Div(['Choisir pelnaty']),
                             placeholder="Choix de penalty",
                             options=[{'label':f'pelnaty={name}', 'value': name} for name in ['l2', 'none']],
                             multi=False,
-                            style={'backgroundColor': '#FFCAB1'},
                             className='stockselector',
                          )], style= {'display': 'none'}),   
                      
+                     #Sorties pour la reg ridge
                      html.Div(id='acc'),
                      html.Div(id='graph1',),
+                     #Sortie pour la reg log 
                      html.Div(id='reglog')
                 ]),
                 
             #Onglet 2 : arbres de décision 
             dcc.Tab(id="tab2", value='tab-2',children=[html.Div(id='param_dtr', children=
+                        #Paramètres decision tree regressor
                         [dcc.Dropdown(id="radio_dtr",
                             options=[
                                 {'label': name, 'value': name} for name in ['Paramètres optimaux', 'Paramètres manuels']],
-    #                        value='Paramètres optimaux',
                             style={'width':'75%'}   
                         ),],style={'display': 'none'}),  
                                                        
@@ -250,17 +249,15 @@ app.layout = html.Div([
                               className='stockselector'
                         ),], style={'display': 'none'}),
                     
-                    
+                    #Paramètres decision tree classifier 
                     html.Div(id='param_dtc', children=
                         [dcc.Dropdown(id="radio_dtc",
                                       placeholder="Choix des paramètres",
                             options=[
                                 {'label': name, 'value': name} for name in ['Paramètres manuels','Paramètres optimaux']],
-                           
-                            
-                            style={'width':'75%'}
-                            
-                        ),],style={'display': 'none'}),      
+                                style={'width':'75%'}  
+                        ),],style={'display': 'none'}), 
+                    
                     html.Div(id='paradtc1',children=[dcc.Dropdown(
                               id='depth_dtc',
                               #children=html.Div(['Choisir variable cible' ]),
@@ -293,10 +290,11 @@ app.layout = html.Div([
                         ),], style={'display': 'none'}),
                     
                  
-                    
+                    #Sortie des résultats pour DTC et DTR 
                     html.Div(id='dtr_continue'),
-                    html.Div(id='graph_dtc'),
-                    html.Div(id='graph',)
+                    html.Div(id='graph'),
+                    html.Div(id='graph_dtc')
+                    
            
                 ]),
             
@@ -313,17 +311,13 @@ app.layout = html.Div([
                                 {'label': 'Paramètres optimaux', 'value': 'opti'},
                                 {'label': 'Paramètres manuels', 'value': 'manu'}
                             ],
-                            #par défaut on applique les paramètres optimaux 
-                            #value='opti',
                             labelStyle={'display': 'inline-block'}
                         ),  
                         
                         #Dropdown choix du solver ADL 
                         dcc.Dropdown(
                               id='solver_adl',
-                                  #children=html.Div(['Choisir variable cible' ]),
-                                  placeholder="Choix du solver",
-                             # options=[{'label':'svd', 'value': 'svd'}]+[{'label':'lsqr', 'value': 'lsqr'}]+[{'label':'eigen','value':'eigen'}],
+                              placeholder="Choix du solver",
                               multi=False,
                               style={'width':'75%'},
                               className='stockselector',
@@ -332,9 +326,7 @@ app.layout = html.Div([
                         #Dropdown choix du shinkrage ADL
                         dcc.Dropdown(
                               id='shrinkage_adl',
-                              #children=html.Div(['Choisir variable cible' ]),
                               placeholder="Choix du shrinkage",
-                              #options=[{'label':'None', 'value': 'None'}]+[{'label':'auto', 'value': 'auto'}],
                               multi=False,
                               style={'width':'75%'},
                               className='stockselector'
@@ -342,7 +334,7 @@ app.layout = html.Div([
                         ] , style= {'display': 'none'}
                 ),
                 
-                
+                #Paramètres SGB
                 html.Div(id='param_sgb', children=
                         [dcc.Dropdown(id="radio_sgb",
                             options=[
@@ -350,8 +342,6 @@ app.layout = html.Div([
                             value='Paramètres manuels',
                             style={'width':'75%'}   
                         ),],style={'display': 'none'}),  
-                
-                
                                 
                  html.Div(id='parasgb1',children=[
                             dcc.Dropdown(
@@ -415,20 +405,14 @@ app.layout = html.Div([
                            )
                         ,], style={'display': 'none'}),
                        
-                
-                
-                
+                #Sortie SGB
                 html.Div(id='neuron'),
                 html.Div(id='graph2',),
+                #Sortie ADL
                 html.Div(id='graph_adl')
             ]),
         ]),  
-            #On inclut tous les éléments graphiques dont on a besoin 
-            # html.Div(id='onglets_content',children=[
-            #     html.Div(id='gradient_class'),
-            #     html.Div(id='ensemble'),                  
-            #     ])
-        
+            
     ]),
   ],style={'width': '70%', 'display': 'inline-block', 'vertical-align': 'top'})
      
@@ -437,7 +421,7 @@ app.layout = html.Div([
 
 
 
-#Modification du label de chaque onglet en fonction du type de la variable cible 
+#Modification du label de chaque onglet en fonction du type de la variable cible (3 fonctions)
 @app.callback(Output('tab1', 'label'),
               [Input('cible', 'value')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
@@ -452,7 +436,7 @@ def update_label_tab1(cible,contents,filename):
             if "Qualitative" in type_var:
                 return "Régression logistique" 
             else :
-                return "Régression Ridge" #D T classifier #adl   #reg  SGB  DT regressor 
+                return "Régression Ridge" 
     return "Méthode 1"
 
 @app.callback(Output('tab2', 'label'),
@@ -497,6 +481,7 @@ def QT_function0(df,value):
     if str(df.dtypes[str(value)])=='object':
         out="Qualitative"
     else:
+        #dès qu'on a moins de 6 valeurs (quanti) différentes on est sur ddes classes codées en numérique
         if (len(np.unique(df[str(value)]))<6):
             out="Qualitative"
         else:
@@ -511,11 +496,11 @@ def parse_contents(contents, filename):
     decoded = base64.b64decode(content_string)
     try:
         if 'csv' in filename:
-            # Assume that the user uploaded a CSV file
+            # lecture fchiers CSV
             df = pd.read_csv(
                 io.StringIO(decoded.decode('utf-8')))
         elif 'xls' in filename:
-            # Assume that the user uploaded an excel file
+            # lecture fichier Excel
             df = pd.read_excel(io.BytesIO(decoded))
     except Exception as e:
         print(e)
@@ -524,44 +509,13 @@ def parse_contents(contents, filename):
                         ]),
     return df
 
-######################## AFFICHER LA TABLE DE TYPE #####################################
-        
-"""
-@app.callback(Output('tabletype', 'children'),
-              [Input('cible', 'value')],[Input('upload-data', 'contents')],
-              [State('upload-data', 'filename')])
-def tabletype(value,contents,filename):
-    if contents:
-        contents = contents[0]
-        filename = filename[0]
-        df = parse_contents(contents, filename)
-        typelist=list()
-        #collist=list(df.columns)
-        for col in df:
-            typevalue=QT_function0(df,col)
-            typelist.append(typevalue)
-    #collist=tuple(collist)    
-    #typelist=tuple(typelist)
-    #listfinal=np.column_stack((collist))
-        dftype=pd.DataFrame(typelist,columns=['Nom de Variable','Type de Variable'])
-        return html.Div([
-                        dash_table.DataTable(
-                                id='type',
-                                data=dftype.to_dict('records'),
-                                columns=[{'name': i, 'id': i} for i in dftype.columns]
-            )])
-
-
-"""
-
 
 #Affichage du type de la variable cible 
 @app.callback(Output('pre_algo', 'children'),
               [Input('cible', 'value')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
-def update_output(value, contents,filename): 
-    #child = []   
+def update_output(value, contents,filename):    
 
     if contents:
         contents = contents[0]
@@ -578,10 +532,6 @@ def update_output(value, contents,filename):
 #Obtention liste choix des algo en fonction du type de la variable cible 
 def QT_function(value):
     output=[]
-#    if str(df.dtypes[str(value)])=='object':
-#        out="Qualitative"
-#    else:
-#        out="Quantitative"
     if value=="Qualitative":
         output= ["Régression Logistique", "Decision tree Classifier","Analyse Discriminante Linéaire"]
     elif value=="Quantitative":
@@ -590,25 +540,6 @@ def QT_function(value):
         output=[]
     return output
 
-
-
-
-# @app.callback(Output('algo', 'options'),
-#               [Input('pre_algo', 'children')])
-
-# def update_output00(value): 
-#     options = []   
-
-# #    if contents:
-# #        contents = contents[0]
-# #        filename = filename[0]
-# #        df = parse_contents(contents, filename)
-#     if value:
-#         out=QT_function(str(value))
-#         options=[{'label':name, 'value': name}  for name in out]
-#     else:
-#         options=[]
-#     return options
 
 #Mise à jour du dropdown avec le choix des algos
 @app.callback(Output('algo', 'options'),
@@ -641,8 +572,7 @@ def update_variable_cible(contents, filename):
         contents = contents[0]
         filename = filename[0]
         df = parse_contents(contents, filename)
-        options=[{'label':name, 'value': name} for name in df.columns.tolist()]#+[{'label':'data', 
-                                                                                 # 'value':'data'}]
+        options=[{'label':name, 'value': name} for name in df.columns.tolist()]
     return options
     
 #Mise à jour dropdown du choix des variables explicatives 
@@ -664,7 +594,7 @@ def update_variable_predire(contents, value,filename):
     return options
 
 
-# Mise à jour lAffichage du fichier chargé 
+# Affichage du fichier chargé 
 @app.callback(Output('output-data-upload', 'children'),
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
@@ -679,16 +609,6 @@ def update_table(contents, filename):
 
         table = html.Div([
             html.H5(filename)#,
-         #   dash_table.DataTable(
-         #       data=df.head(10).to_dict('rows'),
-          #      columns=[{'name': i, 'id': i} for i in df.columns] #df.columns
-          #  )#,
-           # html.Hr(),
-           # html.Div('Raw Content'),
-           # html.Pre(contents[0:200] + '...', style={
-            #   'whiteSpace': 'pre-wrap',
-            #    'wordBreak': 'break-all'
-            #})
         ])
     else : 
         table = html.Div([
@@ -696,34 +616,6 @@ def update_table(contents, filename):
 
     return table
               
-
-
-
-
-##### mise à jour les donnes corespond à la variable qu'on a choisi
-
-
-
-#@app.callback(Output('data', 'children'),
-#              [Input('cible', 'value')], [Input('upload-data', 'contents')],
-#              [State('upload-data', 'filename')])
-
-#def update_output3(value,contents,filename):
-#    children = html.Div()
-#    if contents:
-#        contents=contents[0]
-#        filename=filename[0]
-#        df=parse_contents(contents,filename)
-      # children=html.Div([dash_table.DataTable(data=df.to_dict('row'), columns=value)])
-#        if str(value)=='data':
-#            children=html.Div([dash_table.DataTable(data=df.to_dict('row'),columns=
-#                                                    [{'name':i,'id':i}for i in df.columns])])
-#        else:
-#            children=html.Div([dash_table.DataTable(data=df.to_dict('row'),columns=
-#                                             [{'name':str(value),'id':str(value)}])])
-#    return children
-    
-
 
 #-----------------------------------Gestion des calculs---------------------------------------------
 
@@ -733,39 +625,38 @@ def update_table(contents, filename):
 ##############################################################################
 
 
-
-
-# recherche hyperparametre
+#calcul de la régression avec recherche hyperparametre optimal
 
 def lin(df,value,variables):
     c_space = np.logspace(-4, 0, 20)
     params = {'alpha': c_space}
-#    df_bis=pd.get_dummies(df)
+    #Création de X en fonction des variables explicatives choisies 
     df_bis=df.loc[:,variables]
     X=pd.get_dummies(df_bis)
+    #Définition de y en fonction de la cible choisie
     y=df[str(value)]
     X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     start=time()
     linear=Ridge(normalize=True)
+    #recherche hyperparamètres + cross validation
     linear_cv=GridSearchCV(linear, params, cv=5)
     linear_cv.fit(X_train,y_train)
     end=time()
     y_pre=linear_cv.best_estimator_.predict(X)
     dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
+    #Calcul du R2
     score=r2_score(y_test, linear_cv.best_estimator_.predict(X_test))
     
     done=round(end-start,3)
     return [score, data_frame, done]
-    
-    
+        
 
-# hyperparametre fixé
+# calcul régression avec hyperparametre fixé manuellement
 
 def lin_bis(df,value,variables,para):
     c_space = [para]
     params = {'alpha': c_space}
-#    df_bis=pd.get_dummies(df)
     df_bis=df.loc[:,variables]
     X=pd.get_dummies(df_bis)
     y=df[str(value)]
@@ -793,8 +684,9 @@ def lin_bis(df,value,variables,para):
 
 
 
-# Instantiate gb
+# calcul SCG avec recherche hyperparametre optimaux 
 def gradient(df,value,variables):
+    #PAramètres parmi lesquels chercher le meilleur
     params={'n_estimators':[16,32,64,100,200], 'learning_rate':[0.25,0.1,0.05,0.025],
             'max_depth':[1,2,4,8], 'subsample': [0.5,0.9,1], 'max_features':[0.5,0.75]}
     gb = GradientBoostingRegressor()
@@ -818,7 +710,7 @@ def gradient(df,value,variables):
     
     
     
-# hyperparametre fixe    
+# calcul SGB avec hyperparametres ficés manuellement  
     
 def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
     
@@ -845,13 +737,7 @@ def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
     score_mean=round(gb_cv.cv_results_['mean_test_score' ][0],3)
     return [score, data_frame, done, score_mean]
     
-    
-   
-    
-    
-    
-    
-    
+ 
 
 
 ##############################################################################
@@ -859,10 +745,7 @@ def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
 ##############################################################################
 
 
-
-
-# recherche hyperparametre
-
+#calcul DTR avec recherche hyperparametres optimaux 
 scoring = make_scorer(r2_score)
 
 def dtr_continue(df,value, variables):
@@ -888,7 +771,7 @@ def dtr_continue(df,value, variables):
     return [acc, data_frame, done]
     
 
-
+#calcul DTR avec hyperparametres fiwés manuellement
 def dtr_continue_params(df,value, variables,para1,para2,para3):
     
     params = {"max_depth": [para1],
@@ -917,9 +800,7 @@ def dtr_continue_params(df,value, variables,para1,para2,para3):
 ########################### DECISION TREE CLASSIFIER ##########################
 ##############################################################################
 
-
-
-
+#calcul DTC avec recherche hyperparamètre optimaux
 def dtc_continue(df,value,variables):
     
     params = {"max_depth": [3,6,9,12, None],
@@ -935,9 +816,6 @@ def dtc_continue(df,value,variables):
     dt_cv.fit(X_train,y_train)
     accuracy_moyenne=round(dt_cv.best_score_,3)
     y_pre=dt_cv.best_estimator_.predict(X_test)
-#    dict={'classe réelle':y, 'classe predicte': y_pre}
-#    data_frame=pd.DataFrame(dict)
-
     done = time()
     tps = round(done - start,3)
 
@@ -947,7 +825,6 @@ def dtc_continue(df,value,variables):
     #calcul des métriques par classe 
     met_dtc = metrics.classification_report(y_test,y_pre,output_dict=True)
     met_dtc2= metrics.classification_report(y_test,y_pre)
-    
     
     #calcul du taux d'erreur 
     acc = round(metrics.accuracy_score(y_test,y_pre),3)
@@ -962,7 +839,7 @@ def dtc_continue(df,value,variables):
     
     return [mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,fig_ROC,fig_thresh]
 
-
+#calcul DTC avec hyperparamètre fixés
 def dtc_continue_params(df,value,variables,para1,para2,para3):
     
     params = {"max_depth": [para1],
@@ -978,8 +855,6 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     dt_cv.fit(X_train,y_train)
     accuracy_moyenne=round(dt_cv.best_score_,3)
     y_pre=dt_cv.best_estimator_.predict(X_test) 
-#    dict={'classe réelle':y, 'classe predicte': y_pre}
-#    data_frame=pd.DataFrame(dict)
 
     done = time()
     tps = round(done - start,3)
@@ -1005,177 +880,6 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     return [mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,fig_ROC,fig_thresh]
      
     
-# Regression    
-    
-@app.callback(Output('acc', 'children'),
-              [Input('cible', 'value')], [Input('parameter','value')], [Input('predire', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
-              [State('upload-data', 'filename')])
-
-def update_result_regression(value1,para,variables,contents,value2,filename):
-    children = html.Div()
-    
-    if "Regression" in value2:
-        if contents:
-            contents=contents[0]
-            filename=filename[0]
-            df=parse_contents(contents,filename)
-            if value1:
-                if variables:
-                    if para:
-                        if para=="Le meilleur paramètre":
-                            children=html.Div([html.Div( ["Temps de calcul = ", str(lin(df,value1, variables)[2])]),html.Div(["R square of Regression =",  str(lin(df,value1, variables)[0])])])
-                        else:
-                            children=html.Div([html.Div( ["Temps de calcul = ", str(lin_bis(df,value1, variables,para)[2])]),html.Div(["R square mean of Regression =",  str(lin_bis(df,value1, variables,para)[3])]), html.Div(["R square of Regression =",  str(lin_bis(df,value1, variables,para)[0])])])
-     
-    return children 
-
-
-
-# Decision tree classifier
-
-
-@app.callback(Output('graph_dtc', 'children'),
-[Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtc','value')],[Input('depth_dtc','value')],[Input('sample_dtc','value')],[Input('criterion_dtc','value')],
-[Input('upload-data', 'contents')], [Input('algo', 'value')],
-[State('upload-data' , 'filename')])
-
-def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,filename):
-    figu=html.Div()
-    #children = html.Div()
-    if "Decision tree Classifier" in value2:
-        #si marche pas, enlever value and variables et ne laisser que contents
-        if contents and value and variables:
-            contents=contents[0]
-            filename=filename[0]
-            df=parse_contents(contents,filename) 
-            
-            if value:
-                if variables:   
-                    if params:
-                        if params=="Paramètres manuels" and para1 and para2 and para3:
-                            mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,figROC,figthresh=dtc_continue_params(df, value, variables,para1,para2,para3)
-                        else: 
-                            mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,figROC,figthresh=dtc_continue(df,value,variables) 
-                            
-                        met_dtc_classe=[]
-                        for cat in catego:
-                                met_dtc_classe.append(met_dtc[str(cat)]["precision"])
-                                met_dtc_classe.append(met_dtc[str(cat)]["recall"])
-                        met_dtc_classe=np.array(met_dtc_classe)
-                        met_dtc_classe=met_dtc_classe.reshape(len(catego),2)
-                        met_dtc2=report_to_df(met_dtc2)
-                
-                        fig=px.imshow(mc_dtc, 
-                        labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),
-                        x=catego,y=catego,
-                        color_continuous_scale="Tealgrn", 
-                        title="Matrice de confusion"
-                        )
-                            
-                        fig2=px.imshow(met_dtc_classe,
-                        labels=dict(color="Valeurs"),
-                        x=["Précision","Rappel"],
-                        y=catego,
-                        color_continuous_scale="Tealgrn",
-                        title="Indicateurs par classe "
-                        )
-                        #sortie
-                        figu=html.Div(children=[
-                        html.H5("Temps de calcul : "+str(tps)), 
-                
-                        html.H6("Accuracy moyenne : "+str(accuracy_moyenne)),
-                
-                        "Accuracy du modèle : "+str(acc),
-                
-                        dash_table.DataTable(id='testmetdtc',
-                        #title= f'Evaluation(Taux d''erreur={acc})',
-                        columns=[{"name": i, "id": i} for i in met_dtc2.columns],
-                        data=met_dtc2.to_dict('rows'),
-                        editable=True
-                        ),
-                
-                        dcc.Graph(id='Matrice de confusion', figure=fig),
-                
-                        dcc.Graph(id='Indicateurs par classe', figure=fig2),
-                        
-                        dcc.Graph(id='ROC',figure=figROC),
-                        
-                        dcc.Graph(id='Thresh',figure=figthresh)
-                
-                        ],style={ 'textAlign': 'center'})
- 
-     
-    return figu
-
-
-
-
-
-# Decision tree regressor
-
-@app.callback(Output('dtr_continue', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtr','value')],[Input('depth_dtr','value')],[Input('sample_dtr','value')],[Input('criterion_dtr','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
-              [State('upload-data', 'filename')])
-
-def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2,filename):
-    
-    children = html.Div()
-    if "Decision tree Regressor" in value2:
-        if contents:
-            contents=contents[0]
-            filename=filename[0]
-            df=parse_contents(contents,filename) 
-            
-            if value1:
-                if variables:
-                    if params:
-                        if params=="Paramètres optimaux": 
-                            children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue(df, value1, variables)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])])]) 
-                        if params=="Paramètres manuels":
-                            if para1:
-                                if para2:
-                                    if para3:
-                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square mean of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[3])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[0])])]) 
-                               
-     
-    return children
-
-
-
-
-# Gradient Boosting
-
-
-@app.callback(Output('neuron', 'children'),
-              [Input('cible', 'value')], [Input('predire','value')],[Input('radio_sgb','value')],[Input('n_estimators_sgb','value')],[Input('learning_rate_sgb','value')],[Input('max_depth_sgb','value')],
-              [Input('sub_sample_sgb','value')],  [Input('max_features_sgb','value')],
-              [Input('upload-data', 'contents')], [Input('algo', 'value')],
-              [State('upload-data', 'filename')])
-
-def update_result_Boosting(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename): 
-    
-    children = html.Div()
-    if "SGB" in value2:
-        if contents:
-            contents=contents[0]
-            filename=filename[0]
-            df=parse_contents(contents,filename) 
-            if value1:
-                if variables:
-                    if params:
-                        if params=="Paramètres optimaux":
-                            children=html.Div([html.Div(["Temps de calcul =", str(gradient(df, value1, variables)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])])]) 
-                        if params=="Paramètres manuels":
-                            if para1:
-                                if para2:
-                                    if para3:
-                                        if para4:
-                                            if para5:
-                                                children=html.Div([html.Div(["Temps de calcul =", str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[2])]),html.Div(["R square mean of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[3])]), html.Div(["R square of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[0])])]) 
-                               
-     
-    return children
-
 
 ##############################################################################
 #####################          REGRESSION LOGISTIQUE       ###################
@@ -1183,7 +887,6 @@ def update_result_Boosting(value1,variables,params,para1,para2,para3,para4,para5
 
 
 #Stocker le resultat de matric confusion dans un tableau 
-
 def report_to_df(report):
     report = [x.split(' ') for x in report.split('\n')]
     header = ['Class Name']+['Précision']+['Sensiblité']+['F1']+['Fréquence']
@@ -1196,6 +899,7 @@ def report_to_df(report):
     return df
 
 
+#Calcul + sortie de la régression logistique
 @app.callback(Output('reglog', 'children'),
               [Input('predire','value')], [Input('radio_reglog', 'value')],
               [Input('paraRegLog1', 'value')],[Input('paraRegLog2', 'value')],
@@ -1212,9 +916,10 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                 param_grid=0
                 if vcible:
                     start=time()
-                    y = y=df[str(vcible)]
+                    y=df[str(vcible)]
                     X=df.loc[:,variables]
                     if para:
+                        #calcul avec hyperparamètre fixés
                         if para=='Paramètres manuels':
                             if para1:
                                 if para2:
@@ -1225,8 +930,8 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                  'max_iter' : [100, 1000,2500, 5000]
                                  }
                                 ]
-#                                
-                            
+                               
+                        #calcul avec recherche hyperparamètre optimaux 
                         if  para=='Paramètres optimaux':
                             param_grid = [    
                             {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
@@ -1257,31 +962,18 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                             y_scores=clf.best_estimator_.predict_proba(X_test)
                             score=round(clf.best_score_,3)
                     
-                            #score=r2_score(y_test,clf.best_estimator_.predict(X_test))
-                    
                             # import the metrics class
                             cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
                             confusion_matrix = pd.crosstab(y_test, y_pred, rownames=['Actual'], colnames=['Predicted'])
                         
-                        
-                            """
-                            fig = px.area(
-                            x=fpr, y=tpr,
-                            title='ROC Curve (AUC={auc(fpr, tpr):.4f})',
-                            labels=dict(x='False Positive Rate', y='True Positive Rate'),
-                            width=700, height=500
-                            )
-                            """
                     
-                    # Evaluating model performance at various thresholds
-                    
-                   
-                    
+                            # Evaluating model performance at various thresholds
                             
                             y_scores=clf.best_estimator_.predict_proba(X_test)
                             y_onehot = pd.get_dummies(y_test, columns=clf.best_estimator_.classes_)
-                    # Create an empty figure, and iteratively add new lines
-                    # every time we compute a new class 
+                            #Création des 2 graphiques 
+                            # Create an empty figure, and iteratively add new lines
+                            # every time we compute a new class 
                             fig_ROC = go.Figure()
                             fig_ROC.add_shape(
                                     type='line', line=dict(dash='dash'),
@@ -1306,6 +998,8 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                         width=700, height=500
                                         )
                             fig_thresh=go.Figure()
+                            
+                            #Cas catégorisation binaire 
                             if y_scores.shape[1]==2:
                                 catego=clf.classes_
                                 classe_posit = catego[[1]]
@@ -1323,7 +1017,8 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                     )
                                 fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
                                 fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
-                                
+                             
+                             #Catégorisation binaire + multiclasses   
                             indice=metrics.classification_report(y_test,y_pred)
                             indice=report_to_df(indice)
                             fig_hist = px.histogram(
@@ -1368,12 +1063,7 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                     html.Div([dcc.Graph(id='Hist', figure=fig_hist)]),
                                     ])
 
-    """
-html.Div(children=f"Score = {score}", style={
-'textAlign': 'center',
-'color': colors['text']
-}),
-"""
+
 
 ##############################################################################
 ###########################           ADL        #############################
@@ -1382,9 +1072,9 @@ html.Div(children=f"Score = {score}", style={
 #Calcul de l'ADL avec les paramètres optimaux 
 def calcul_adl(df,vcible,variables):
     
-    y = df.loc[:,[str(vcible)]]
+    y=df[str(vcible)]
     X=df.loc[:,variables]
-    pd.get_dummies(X)
+    X=pd.get_dummies(X)
     #découpage entrainement / test 
     XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=0.3, stratify=y)
     
@@ -1394,14 +1084,10 @@ def calcul_adl(df,vcible,variables):
     start = time()
     
     #instanciation - recherche des hyperparametres optimaux et validation croisee
-    lda = GridSearchCV(modele, param_grid=params, cv=5, n_jobs=-1,scoring='accuracy')
+    lda = GridSearchCV(modele, param_grid=params, cv=10, n_jobs=-1,scoring='accuracy')
     
     #apprentissage
     lda.fit(XTrain,yTrain)
-    
-    #validation croisée 
-    #scores = cross_val_score(lda, X, y, cv=5)
-    #score_moyen = round(np.mean(scores),3)
    
     done = time()
     #Calcul du temps de calcul 
@@ -1438,8 +1124,8 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     
     if pshr=="None":
         pshr=None
-        
-    y = df.loc[:,[str(vcible)]]
+
+    y=df[str(vcible)]
     X=df.loc[:,variables]
     pd.get_dummies(X)
     #découpage entrainement / test 
@@ -1454,7 +1140,7 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     lda.fit(XTrain,yTrain)
     
     #validation croisée 
-    scores = cross_val_score(lda, X, y, cv=5,scoring='accuracy')
+    scores = cross_val_score(lda, X, y, cv=10,scoring='accuracy')
     score_moyen = round(np.mean(scores),3)
    
     done = time()
@@ -1517,7 +1203,6 @@ def courbe_roc_adl (yTest,y_pred_proba,y_scores,catego):
         if y_scores.shape[1]==2:
             #on définit par défaut une classe comme étant la classe positive 
             classe_posit = catego[[1]]
-            auc = metrics.roc_auc_score(yTest, y_pred_proba)
             fpr, tpr, thresholds = metrics.roc_curve(yTest,  y_pred_proba,pos_label=classe_posit)
             df1 = pd.DataFrame({
                 'Taux de Faux Positifs': fpr,
@@ -1539,6 +1224,8 @@ def courbe_roc_adl (yTest,y_pred_proba,y_scores,catego):
 
 
 #------------------------------------------SORTIE DES ALGORITHMES--------------------------------------
+
+
 
 #Sortie ADL
 @app.callback(Output('graph_adl', 'children'),
@@ -1610,7 +1297,6 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                     "Accuracy/Précision : ",str(acc),
                 
                     dash_table.DataTable(id='testmetadl',
-                                     #title= f'Evaluation(Taux d''erreur={acc})',
                                      columns=[{"name": i, "id": i} for i in met2.columns],
                                      data=met2.to_dict('rows'),
                                      editable=True
@@ -1619,27 +1305,172 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                     dcc.Graph(id='figadl', figure=fig),
                 
                     dcc.Graph(id='figadl2', figure=fig2),
-                    
-                    #html.Div([dcc.Graph(id='ROC', figure=yscore,style={'width':'30%'}),
-                    #                          dcc.Graph(id='Thresh', figure=ft)
-                    #                         ],style={'columnCount': 2}),
+
                     dcc.Graph(id='ROC', figure=yscore),
                     dcc.Graph(id='Thresh', figure=ft)
                 
                     ],style={ 'textAlign': 'center'})
-                
-
-                         
-         
                                
     return figu
 
 
 
+# Regression    
+    
+@app.callback(Output('acc', 'children'),
+              [Input('cible', 'value')], [Input('parameter','value')], [Input('predire', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
+              [State('upload-data', 'filename')])
+
+#Sorite métriques régression ridge
+def update_result_regression(value1,para,variables,contents,value2,filename):
+    children = html.Div()
+    
+    if "Regression" in value2:
+        if contents:
+            contents=contents[0]
+            filename=filename[0]
+            df=parse_contents(contents,filename)
+            if value1:
+                if variables:
+                    if para:
+                        if para=="Le meilleur paramètre":
+                            children=html.Div([html.Div( ["Temps de calcul = ", str(lin(df,value1, variables)[2])]),html.Div(["R square of Regression =",  str(lin(df,value1, variables)[0])])])
+                        else:
+                            children=html.Div([html.Div( ["Temps de calcul = ", str(lin_bis(df,value1, variables,para)[2])]),html.Div(["R square mean of Regression =",  str(lin_bis(df,value1, variables,para)[3])]), html.Div(["R square of Regression =",  str(lin_bis(df,value1, variables,para)[0])])])
+     
+    return children 
+
+#Sortie graphique régression ridge
+@app.callback(Output('graph1', 'children'),
+              [Input('cible', 'value')],[Input('parameter', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [State('upload-data', 'filename')])
+
+def update_graph_Regression(value1,para,variables,contents,value2,filename):
+    figu=html.Div()
+    if "Regression" in value2:   
+        if contents:
+            contents=contents[0]
+            filename=filename[0]
+            df=parse_contents(contents,filename) 
+            if value1: 
+                if variables:
+                    
+                    if para:
+                        if para=="Le meilleur paramètre":
+                            data_frame=lin(df, value1, variables)[1]
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Régression"))])
+                        else:
+                            data_frame=lin_bis(df, value1, variables,para)[1]
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Régression"))])
+                               
+    return figu
 
 
-# Arbre de decision : regressor
 
+# Sortie Decision tree classifier (métriques + graphiques)
+
+@app.callback(Output('graph_dtc', 'children'),
+[Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtc','value')],[Input('depth_dtc','value')],[Input('sample_dtc','value')],[Input('criterion_dtc','value')],
+[Input('upload-data', 'contents')], [Input('algo', 'value')],
+[State('upload-data' , 'filename')])
+
+def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,filename):
+    figu=html.Div()
+    if "Decision tree Classifier" in value2:
+        #si marche pas, enlever value and variables et ne laisser que contents
+        if contents and value and variables:
+            contents=contents[0]
+            filename=filename[0]
+            df=parse_contents(contents,filename) 
+            
+            if value:
+                if variables:   
+                    if params:
+                        if params=="Paramètres manuels" and para1 and para2 and para3:
+                            mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,figROC,figthresh=dtc_continue_params(df, value, variables,para1,para2,para3)
+                        else: 
+                            mc_dtc,acc,catego,met_dtc,met_dtc2,accuracy_moyenne,tps,figROC,figthresh=dtc_continue(df,value,variables) 
+                            
+                        met_dtc_classe=[]
+                        for cat in catego:
+                                met_dtc_classe.append(met_dtc[str(cat)]["precision"])
+                                met_dtc_classe.append(met_dtc[str(cat)]["recall"])
+                        met_dtc_classe=np.array(met_dtc_classe)
+                        met_dtc_classe=met_dtc_classe.reshape(len(catego),2)
+                        met_dtc2=report_to_df(met_dtc2)
+                
+                        fig=px.imshow(mc_dtc, 
+                        labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),
+                        x=catego,y=catego,
+                        color_continuous_scale="Tealgrn", 
+                        title="Matrice de confusion"
+                        )
+                            
+                        fig2=px.imshow(met_dtc_classe,
+                        labels=dict(color="Valeurs"),
+                        x=["Précision","Rappel"],
+                        y=catego,
+                        color_continuous_scale="Tealgrn",
+                        title="Indicateurs par classe "
+                        )
+                        #sortie
+                        figu=html.Div(children=[
+                        html.H5("Temps de calcul : "+str(tps)), 
+                
+                        html.H6("Accuracy moyenne : "+str(accuracy_moyenne)),
+                
+                        "Accuracy du modèle : "+str(acc),
+                
+                        dash_table.DataTable(id='testmetdtc',
+                        #title= f'Evaluation(Taux d''erreur={acc})',
+                        columns=[{"name": i, "id": i} for i in met_dtc2.columns],
+                        data=met_dtc2.to_dict('rows'),
+                        editable=True
+                        ),
+                
+                        dcc.Graph(id='Matrice de confusion', figure=fig),
+                
+                        dcc.Graph(id='Indicateurs par classe', figure=fig2),
+                        
+                        dcc.Graph(id='ROC',figure=figROC),
+                        
+                        dcc.Graph(id='Thresh',figure=figthresh)
+                
+                        ],style={ 'textAlign': 'center'})
+ 
+     
+    return figu
+
+
+# Sortie Decision tree regressor métriques
+@app.callback(Output('dtr_continue', 'children'),
+              [Input('cible', 'value')], [Input('predire','value')], [Input('radio_dtr','value')],[Input('depth_dtr','value')],[Input('sample_dtr','value')],[Input('criterion_dtr','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
+              [State('upload-data', 'filename')])
+
+def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2,filename):
+    
+    children = html.Div()
+    if "Decision tree Regressor" in value2:
+        if contents:
+            contents=contents[0]
+            filename=filename[0]
+            df=parse_contents(contents,filename) 
+            
+            if value1:
+                if variables:
+                    if params:
+                        if params=="Paramètres optimaux": 
+                            children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue(df, value1, variables)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue(df, value1, variables)[0])])]) 
+                        if params=="Paramètres manuels":
+                            if para1:
+                                if para2:
+                                    if para3:
+                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square mean of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[3])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[0])])]) 
+                               
+     
+    return children
+
+# Sortie Decision tree regressor graphiques
 @app.callback(Output('graph', 'children'),
               [Input('cible', 'value')], [Input('radio_dtr','value')],[Input('depth_dtr','value')],[Input('sample_dtr','value')],[Input('criterion_dtr','value')],
               [Input('predire','value')],[Input('upload-data', 'contents')], [Input('algo', 'value')],
@@ -1669,36 +1500,42 @@ def update_output_dtr_graph(value1,params,para1,para2,para3,variables,contents,v
 
 
 
-# Regression
 
 
-@app.callback(Output('graph1', 'children'),
-              [Input('cible', 'value')],[Input('parameter', 'value')], [Input('predire','value')], [Input('upload-data', 'contents')], [Input('algo', 'value')],
+# Sortie Gradient Boosting métriques 
+
+@app.callback(Output('neuron', 'children'),
+              [Input('cible', 'value')], [Input('predire','value')],[Input('radio_sgb','value')],[Input('n_estimators_sgb','value')],[Input('learning_rate_sgb','value')],[Input('max_depth_sgb','value')],
+              [Input('sub_sample_sgb','value')],  [Input('max_features_sgb','value')],
+              [Input('upload-data', 'contents')], [Input('algo', 'value')],
               [State('upload-data', 'filename')])
 
-def update_graph_Regression(value1,para,variables,contents,value2,filename):
-    figu=html.Div()
-    if "Regression" in value2:   
+def update_result_Boosting(value1,variables,params,para1,para2,para3,para4,para5,contents,value2,filename): 
+    
+    children = html.Div()
+    if "SGB" in value2:
         if contents:
             contents=contents[0]
             filename=filename[0]
             df=parse_contents(contents,filename) 
-            if value1: 
+            if value1:
                 if variables:
-                    
-                    if para:
-                        if para=="Le meilleur paramètre":
-                            data_frame=lin(df, value1, variables)[1]
-                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Régression"))])
-                        else:
-                            data_frame=lin_bis(df, value1, variables,para)[1]
-                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Régression"))])
+                    if params:
+                        if params=="Paramètres optimaux":
+                            children=html.Div([html.Div(["Temps de calcul =", str(gradient(df, value1, variables)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient(df, value1, variables)[0])])]) 
+                        if params=="Paramètres manuels":
+                            if para1:
+                                if para2:
+                                    if para3:
+                                        if para4:
+                                            if para5:
+                                                children=html.Div([html.Div(["Temps de calcul =", str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[2])]),html.Div(["R square mean of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[3])]), html.Div(["R square of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[0])])]) 
                                
-    return figu
+     
+    return children
 
 
-# Gradient boosting
-
+# Sortie Gradient boosting graphiques 
 
 @app.callback(Output('graph2', 'children'),
               [Input('cible', 'value')], [Input('predire','value')], [Input('radio_sgb','value')],[Input('n_estimators_sgb','value')],[Input('learning_rate_sgb','value')],[Input('max_depth_sgb','value')],
@@ -1756,14 +1593,15 @@ def update_graph_PCA(variables,value1,value2,contents,filename):
             X=pd.get_dummies(X1)
                 
             if value2=="Quantitative":
-                #X=df_bis.drop(columns=[str(value1)])
                 y=df_bis[str(value1)].to_numpy()
                 sc = StandardScaler() 
                 X_normalized = sc.fit_transform(X)  
                 pca = PCA(n_components=2)
                 components = pca.fit_transform(X_normalized) 
                 components=np.c_[components,y]
+                #Graphique 3D 
                 fig = px.scatter_3d(components, x=0, y=1, z=2,color=2, labels={'0':'PC1', '1':'PC2', '2':'y observé'})
+                #Graphique 2D
                 fig2 = px.scatter(components, x=0, y=1, color=2,labels={'0':'PC1', '1':'PC2', '2':'y observé'})
                 loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
                 features=X1.columns
@@ -1785,20 +1623,14 @@ def update_graph_PCA(variables,value1,value2,contents,filename):
                         yanchor="bottom",
                         text=feature,
                         )
-               # figu=html.Div(children=[dcc.Graph(id='fig_acp2',  figure=fig2)])        
-               # figu=html.Div(children=[dcc.Graph(id='fig_acp2',  figure=px.scatter(components, x=0, y=1, color=2,labels={'0':'PC1', '1':'PC2', '2':'y observé'})),dcc.Graph(id="testpca", figure=px.scatter_3d(components, x=0, y=1, z=2,color=2, labels={'0':'PC1', '1':'PC2', '2':'y observé'}))])        
                 figu=html.Div(children=[dcc.Graph(id='fig_acp2', figure=fig2),dcc.Graph(id='fig_acp1',figure=fig)])
             if value2=="Qualitative":
-                #X=df.drop(columns=[str(value1)])
                 y=df[str(value1)]
                 X=pd.get_dummies(X)
                 sc = StandardScaler() 
                 X_normalized = sc.fit_transform(X)  
                 pca = PCA(n_components=2)
                 components = pca.fit_transform(X_normalized) 
-#                components=np.c_[components,y]
-#            fig = px.scatter_3d(components, x=0, y=1, z=2, labels={'0':'PC1', '1':'PC2', '2':'valeur réel'})
-
                 loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
                 features=X.columns
                 fig=px.scatter(components, color=df[str(value1)], x=0, y=1, labels={'0':'PC1', '1':'PC2'})
@@ -1828,9 +1660,10 @@ def update_graph_PCA(variables,value1,value2,contents,filename):
 
 
 
-######################## PARAMETRE ############################
+######################## HYPER-PARAMETREs ############################
 
 
+#Affichage contrôles hyperparametres régression ridge
 @app.callback(Output('para', 'style'),
               [Input('algo', 'value')])
 
@@ -1842,10 +1675,7 @@ def update_output300(value):
 
     return style
 
-
-
-
-
+#Affichage contrôles hyperparametres régression logistique
 @app.callback(Output('param_reglog', 'style'), 
               [Input('algo', 'value')]) 
  
@@ -1856,8 +1686,6 @@ def display_param_sgb(cible):
         style={'width': '37.5%','display': 'block'} 
  
     return style 
- 
- 
  
 @app.callback(Output('paraRegLog_1', 'style'), 
               [Input('radio_reglog', 'value')], [Input('algo', 'value')]) 
@@ -1872,8 +1700,6 @@ def options_parameter1_reglog(value,algo):
     return style 
  
  
- 
- 
 @app.callback(Output('paraRegLog_2', 'style'), 
               [Input('radio_reglog', 'value')], [Input('algo', 'value')]) 
  
@@ -1885,10 +1711,7 @@ def options_parameter2_reglog(value,algo):
             style={'width': '33.5%','display': 'block'} 
     return style 
  
-
-
-
-
+#Affichage contrôles hyperparametres DTR
 @app.callback(Output('param_dtr', 'style'),
               [Input('algo', 'value')])
 
@@ -1941,8 +1764,7 @@ def options_criterion_dtr(value,algo):
     return style
 
 
-
-
+#Affichage contrôles hyperparametres DTC
 @app.callback(Output('param_dtc', 'style'),
               [Input('algo', 'value')])
 
@@ -1972,8 +1794,6 @@ def options_depth_dtc(value,algo):
 
     return style
 
-
-
 @app.callback(Output('paradtc2', 'style'),
               [Input('radio_dtc', 'value')], [Input('algo', 'value')])
 
@@ -1984,9 +1804,6 @@ def options_sample_dtc(value, algo):
         if "Decision tree Classifier" in algo:
             style={'width': '37.5%','display': 'block'}
     return style
-
-
-
 
 @app.callback(Output('paradtc3', 'style'),
               [Input('radio_dtc', 'value')], [Input('algo', 'value')])
@@ -2000,7 +1817,7 @@ def options_criterion_dtc(value,algo):
     return style
 
 
-
+#Affichage contrôles hyperparametres SGB
 @app.callback(Output('param_sgb', 'style'), 
               [Input('algo', 'value')]) 
  
@@ -2011,8 +1828,6 @@ def display_param_sgb(cible):
         style={'width': '37.5%','display': 'block'} 
  
     return style 
- 
- 
  
 @app.callback(Output('parasgb1', 'style'), 
               [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
@@ -2025,10 +1840,7 @@ def options_estimator_sgb(value,algo):
             style={'width': '37.5%','display': 'block'} 
  
     return style 
- 
- 
- 
- 
+
 @app.callback(Output('parasgb2', 'style'), 
               [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
  
@@ -2040,8 +1852,6 @@ def options_learningrate_sgb(value,algo):
             style={'width': '37.5%','display': 'block'} 
     return style 
  
- 
- 
 @app.callback(Output('parasgb3', 'style'), 
               [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
  
@@ -2052,9 +1862,7 @@ def options_depth_sgb(value,algo):
         if "SGB" in algo: 
             style={'width': '37.5%','display': 'block'} 
     return style 
- 
- 
- 
+  
 @app.callback(Output('parasgb4', 'style'), 
               [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
  
@@ -2065,8 +1873,6 @@ def options_sample_sgb(value,algo):
         if "SGB" in algo: 
             style={'width': '37.5%','display': 'block'} 
     return style 
- 
- 
  
 @app.callback(Output('parasgb5', 'style'), 
               [Input('radio_sgb', 'value')], [Input('algo', 'value')]) 
@@ -2116,49 +1922,14 @@ def options_solver_adl(radio):
         return []
 
 
-#@app.callback(Output('paraRegLog_1', 'style'),
-#              [Input('algo', 'value')])
+#----------------------------Réinitialisation des composants du layout-------------------------------- 
 
-
-#def update_outputParaRegLog1(value2):
-
-#    style={'display': 'none'}
-#    if ("Régression Logistique" in value2):
-#        style={'width': '33.5%','display': 'block'}
-
-#    return style
-
-#@app.callback(Output('paraRegLog_2', 'style'),
-#              [Input('algo', 'value')])
-
-#def update_outputParaRegLog(value2):
-
-#    style={'display': 'none'}
-#    if ("Régression Logistique" in value2):
-#        style={'width': '33.5%','display': 'block'}
-
-#    return style
-
-### RESET DROPDOWN CIBLE
-
-
-
-#@app.callback(Output('cible', 'value'), [Input('cible', 'options')])
-#def callback11(value):
-#    return ""
-
-# @app.callback(Output('pre_algo', 'children'), [Input('pre_algo', 'children')])
-# def callback12(value):
-#     return ""
-
-
-#Réinitialisation des composants du layout 
-
+#
 @app.callback(Output('algo', 'value'), [Input('algo', 'options')])
 def callback13(value):
     return ""
 
-
+#Quand on change de fichier :on décoche le choix des hyper-paramètres pour la reg log
 @app.callback(Output('paraRegLog1', 'value'), [Input('paraRegLog1', 'options')])
 def callback16(value):
     return ""
