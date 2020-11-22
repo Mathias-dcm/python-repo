@@ -930,7 +930,7 @@ def dtc_continue(df,value,variables):
     start = time()
     dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
-    score_moyen=dt_cv.best_score_
+    score_moyen=round(dt_cv.best_score_,3)
     y_pre=dt_cv.best_estimator_.predict(X_test)
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
@@ -973,7 +973,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     start = time()
     dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
-    score_moyen=dt_cv.best_score_
+    score_moyen=round(dt_cv.best_score_,3)
     y_pre=dt_cv.best_estimator_.predict(X_test) 
 #    dict={'classe réelle':y, 'classe predicte': y_pre}
 #    data_frame=pd.DataFrame(dict)
