@@ -27,6 +27,30 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 from time import time
 
+
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import cross_val_score, GridSearchCV, RandomizedSearchCV
+from sklearn.model_selection import train_test_split, KFold
+import numpy as np
+
+from sklearn.ensemble import GradientBoostingRegressor
+
+
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.metrics import make_scorer
+from sklearn.metrics import r2_score
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+
+
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -132,7 +156,7 @@ app.layout = html.Div([
        html.Div(id='div_onglets', className='control-tabs', children=[
             dcc.Tabs(id='tabs_onglets', value='tabs', children=[
             
-                #Onglet 1
+                #Onglet 1 : Régressions ridge et logistique 
                 dcc.Tab(id='tab1', value='tab-1',children=[
                     html.Div(id='para', children=
                           [dcc.Dropdown(
@@ -183,7 +207,7 @@ app.layout = html.Div([
                      html.Div(id='reglog')
                 ]),
                 
-            #Onglet 2  
+            #Onglet 2 : arbres de décision 
             dcc.Tab(id="tab2", value='tab-2',children=[html.Div(id='param_dtr', children=
                         [dcc.Dropdown(id="radio_dtr",
                             options=[
@@ -279,7 +303,7 @@ app.layout = html.Div([
             
 
             
-            #Onglet 3
+            #Onglet 3 : SGB et ADL 
             dcc.Tab(id="tab3", value='tab-3',children=[
                 
                 #Contrôles pour les hyper paramètres de l'ADL 
@@ -329,7 +353,7 @@ app.layout = html.Div([
                         ),],style={'display': 'none'}),  
                 
                 
-                
+                                
                  html.Div(id='parasgb1',children=[
                             dcc.Dropdown(
                                 id='n_estimators_sgb',
@@ -710,12 +734,6 @@ def update_table(contents, filename):
 ##############################################################################
 
 
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import cross_val_score, GridSearchCV, RandomizedSearchCV
-from sklearn.model_selection import train_test_split, KFold
-import numpy as np
 
 
 # recherche hyperparametre
@@ -773,7 +791,6 @@ def lin_bis(df,value,variables,para):
 ##############################################################################
 
 
-from sklearn.ensemble import GradientBoostingRegressor
 
 # Instantiate gb
 def gradient(df,value,variables):
@@ -843,9 +860,6 @@ def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
 
 # recherche hyperparametre
 
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import make_scorer
-from sklearn.metrics import r2_score
 scoring = make_scorer(r2_score)
 
 def dtr_continue(df,value, variables):
@@ -901,9 +915,6 @@ def dtr_continue_params(df,value, variables,para1,para2,para3):
 
 
 
-
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
 scoring = make_scorer(r2_score)
 
 def dtc_continue(df,value,variables):
@@ -981,13 +992,6 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     
 # Regression    
     
-    
-
-    
-
-
-
-
 @app.callback(Output('acc', 'children'),
               [Input('cible', 'value')], [Input('parameter','value')], [Input('predire', 'value')], [Input('upload-data', 'contents')],[Input('algo', 'value')],
               [State('upload-data', 'filename')])
@@ -1009,6 +1013,7 @@ def update_result_regression(value1,para,variables,contents,value2,filename):
                             children=html.Div([html.Div( ["Temps de calcul = ", str(lin_bis(df,value1, variables,para)[2])]),html.Div(["R square of Regression =",  str(lin_bis(df,value1, variables,para)[0])])])
      
     return children 
+
 
 
 # Decision tree classifier
@@ -1691,10 +1696,10 @@ def update_graph_Regression(value1,para,variables,contents,value2,filename):
                     if para:
                         if para=="Le meilleur paramètre":
                             data_frame=lin(df, value1, variables)[1]
-                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Regression"))])
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Régression"))])
                         else:
                             data_frame=lin_bis(df, value1, variables,para)[1]
-                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Regression"))])
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Régression"))])
                                
     return figu
 
@@ -1735,8 +1740,6 @@ def update_graph_Boosting(value1,variables,params,para1,para2,para3,para4,para5,
 
 
 #Représentation factorielle des données 
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 
 @app.callback(Output('graph_PCA', 'children'),
               [Input('predire','value')],[Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
