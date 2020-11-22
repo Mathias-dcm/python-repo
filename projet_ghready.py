@@ -955,7 +955,7 @@ def dtc_continue(df,value,variables):
     y_pred_proba = dt_cv.best_estimator_.predict_proba(X_test)[::,1]
     y_scores=dt_cv.best_estimator_.predict_proba(X_test)
     #on récupère les deux graphiques 
-    fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores)
+    fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores,catego)
     
     return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,fig_ROC,fig_thresh]
 
@@ -997,7 +997,7 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     y_pred_proba = dt_cv.best_estimator_.predict_proba(X_test)[::,1]
     y_scores=dt_cv.best_estimator_.predict_proba(X_test)
     #on récupère les deux graphiques 
-    fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores)
+    fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores,catego)
     
     return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,fig_ROC,fig_thresh]
      
