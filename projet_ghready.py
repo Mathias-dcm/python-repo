@@ -1444,7 +1444,7 @@ def calcul_adl(df,vcible,variables):
     y_pred_proba = lda.best_estimator_.predict_proba(XTest)[::,1]
     y_scores=lda.best_estimator_.predict_proba(XTest)
     #on récupère les deux graphiques 
-    fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores)
+    fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores,catego)
     
     return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
 
@@ -1495,17 +1495,14 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     y_pred_proba = lda.predict_proba(XTest)[::,1]
     y_scores=lda.predict_proba(XTest)
     #Récupération des 2 graphiques 
-    fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores)
+    fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores,catego)
     
     
     return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
 
 #Fonction pour créer les graphiques associés à la courbe ROC pour l'ADL 
-def courbe_roc_adl (yTest,y_pred_proba,y_scores):
-    
-    #Cas où on a plus de 2 classes 
-    if y_scores.shape[1]>2:
-        
+def courbe_roc_adl (yTest,y_pred_proba,y_scores,catego):
+                
         y_onehot = pd.get_dummies(yTest)#, columns=lda.classes_)
         
         fig_ROC = go.Figure()
@@ -1533,31 +1530,26 @@ def courbe_roc_adl (yTest,y_pred_proba,y_scores):
         fig_thresh=px.line(title='Taux de vrais et faux positifs à chaque seuil')
         
     #Cas où on a 2 classes 
-    else:
-        auc = metrics.roc_auc_score(yTest, y_pred_proba)
-        fpr, tpr, thresholds = metrics.roc_curve(yTest,  y_pred_proba)
-        df1 = pd.DataFrame({
-            'Taux de Faux Positifs': fpr,
-            'Taux de Vrai Positfs': tpr
-        }, index=thresholds)
+        if y_scores.shape[1]==2:
+            #on définit par défaut une classe comme étant la classe positive 
+            classe_posit = catego[[1]]
+            auc = metrics.roc_auc_score(yTest, y_pred_proba)
+            fpr, tpr, thresholds = metrics.roc_curve(yTest,  y_pred_proba,pos_label=classe_posit)
+            df1 = pd.DataFrame({
+                'Taux de Faux Positifs': fpr,
+                'Taux de Vrai Positfs': tpr
+                }, index=thresholds)
         
-        df1.index.name = "Seuil"
-        df1.columns.name = "Rate"
-        fig_ROC = px.area(
-            x=fpr, y=tpr,
-            title=f'Courbe ROC (AUC={round(auc,3)})',
-            labels=dict(x='Taux de Faux Positifs', y='Taux de Vrais Positifs'),
-            #width=450, height=500
-        ) 
-        fig_ROC.add_shape(type='line', line=dict(dash='dash'),x0=0, x1=1, y0=0, y1=1)
-        fig_thresh = px.line(
-            df1, color="Rate",title='Taux de vrais et faux positifs à chaque seuil',
-            #width=450, height=500
-        )
-        fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
-        fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
+            df1.index.name = "Seuil"
+            df1.columns.name = "Rate"
+            fig_thresh = px.line(
+                df1, color="Rate",title='Taux de vrais et faux positifs à chaque seuil - Positifs : '+str(classe_posit),
+                #width=450, height=500
+                )
+            fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
+            fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
     
-    return fig_ROC, fig_thresh
+        return fig_ROC, fig_thresh
     
     
 
@@ -1795,6 +1787,7 @@ def update_graph_PCA(variables,value1,value2,contents,filename):
                 features=X1.columns
                 #Ajout de la sémantique des axes avec les variables d'origine 
                 for i, feature in enumerate(features):
+                    #on ne prend en compte que les variables quanti
                     if str(X1.dtypes[str(feature)])!='object':
                         fig2.add_shape(
                         type='line',
@@ -1830,6 +1823,8 @@ def update_graph_PCA(variables,value1,value2,contents,filename):
                 
                 #Ajout de la sémantique des axes avec les variables d'origine 
                 for i, feature in enumerate(features):
+                 #on ne prend en compte que les variables quanti
+                 if str(X1.dtypes[str(feature)])!='object':
                     fig.add_shape(
                         type='line',
                         x0=0, y0=0,
@@ -1908,33 +1903,6 @@ def options_parameter2_reglog(value,algo):
             style={'width': '33.5%','display': 'block'} 
     return style 
  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2131,7 +2099,7 @@ def options_features_sgb(value,algo):
 
 
 
-
+#Rendre les contrôles pour le choix des hyper-paramètres de l'ADL visible
 @app.callback(Output('param_adl', 'style'),
               [Input('algo', 'value')])
 
@@ -2143,15 +2111,19 @@ def display_param_adl(cible):
 
     return style
 
+#Création des options du dropdown Shrinkage de l'ADL
 @app.callback(Output('shrinkage_adl','options'),
              [Input('solver_adl','value')],[Input('radio_adl','value')])
 
 def options_shrinkage_adl(solver,radio):
     if radio == "manu":
+        #Cet hyper-paramètre ne fonctionne pas avec svd 
         if solver=="lsqr" or solver=="eigen":
             return [{'label':'None', 'value': 'None'}]+[{'label':'auto', 'value': 'auto'}]
     return []
 
+
+#Création des options du dropdown Solver de l'ADL
 @app.callback(Output('solver_adl','options'),
              [Input('radio_adl','value')])
 
@@ -2198,6 +2170,8 @@ def options_solver_adl(radio):
 #     return ""
 
 
+#Réinitialisation des composants du layout 
+
 @app.callback(Output('algo', 'value'), [Input('algo', 'options')])
 def callback13(value):
     return ""
@@ -2218,13 +2192,23 @@ def callback17(value):
     return ""
 
 
+#Quand on change de fichier on réinitianlise la variabel cible 
 @app.callback(Output('cible', 'value'), [Input('upload-data', 'filename')])
 def callback11(value):
     if value:
         return ""
 
+#Quand on change de fichier on réinitianlise les variables 
+@app.callback(Output('predire', 'value'), [Input('upload-data', 'filename')])
+def reset_var(value):
+    if value:
+        return ""
 
-
+#Quand on change de fichier : on décoche le choix des hyper-paramètres pour l'ADL
+@app.callback(Output('radio_adl','value'),[Input('upload-data', 'filename')])
+def reset_param_adl(value):
+    if value:
+        return ""
 
 
 
