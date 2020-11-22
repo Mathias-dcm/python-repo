@@ -951,7 +951,13 @@ def dtc_continue(df,value,variables):
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
-    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps]
+    
+    y_pred_proba = dt_cv.best_estimator_.predict_proba(X_test)[::,1]
+    y_scores=dt_cv.best_estimator_.predict_proba(X_test)
+    #on récupère les deux graphiques 
+    fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores)
+    
+    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,fig_ROC,fig_thresh]
 
 
 def dtc_continue_params(df,value,variables,para1,para2,para3):
@@ -987,7 +993,13 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     
     #récupération des labels des classes 
     catego = dt_cv.classes_
-    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps]
+    
+    y_pred_proba = dt_cv.best_estimator_.predict_proba(X_test)[::,1]
+    y_scores=dt_cv.best_estimator_.predict_proba(X_test)
+    #on récupère les deux graphiques 
+    fig_ROC,fig_thresh = courbe_roc_adl(y_test,y_pred_proba,y_scores)
+    
+    return [mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,fig_ROC,fig_thresh]
      
     
 # Regression    
@@ -1038,9 +1050,9 @@ def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,f
                 if variables:   
                     if params:
                         if params=="Paramètres manuels" and para1 and para2 and para3:
-                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps=dtc_continue_params(df, value, variables,para1,para2,para3)
+                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,figROC,figthresh=dtc_continue_params(df, value, variables,para1,para2,para3)
                         else: 
-                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps=dtc_continue(df,value,variables) 
+                            mc_dtc,err,catego,met_dtc,met_dtc2,score_moyen,tps,figROC,figthresh=dtc_continue(df,value,variables) 
                             
                         met_dtc_classe=[]
                         for cat in catego:
@@ -1079,11 +1091,16 @@ def update_output_dtc(value,variables,params,para1,para2,para3,contents,value2,f
                         editable=True
                         ),
                 
-                        dcc.Graph(id='figdtc', figure=fig),
+                        dcc.Graph(id='Matrice de confusion', figure=fig),
                 
-                        dcc.Graph(id='figdtc2', figure=fig2),
+                        dcc.Graph(id='Indicateurs par classe', figure=fig2),
+                        
+                        dcc.Graph(id='ROC',figure=figROC),
+                        
+                        dcc.Graph(id='Thresh',figure=figthresh)
                 
                         ],style={ 'textAlign': 'center'})
+ 
      
     return figu
 
