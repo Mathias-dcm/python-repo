@@ -1410,7 +1410,7 @@ def calcul_adl(df,vcible,variables):
     start = time()
     
     #instanciation - recherche des hyperparametres optimaux et validation croisee
-    lda = GridSearchCV(modele, param_grid=params, cv=5, n_jobs=-1)
+    lda = GridSearchCV(modele, param_grid=params, cv=5, n_jobs=-1,scoring='accuracy')
     
     #apprentissage
     lda.fit(XTrain,yTrain)
@@ -1434,8 +1434,8 @@ def calcul_adl(df,vcible,variables):
     #calcul des métriques par classe 
     met= metrics.classification_report(yTest,ypred,output_dict=True)
     met2= metrics.classification_report(yTest,ypred)
-    #calcul du taux d'erreur 
-    err = round(1-metrics.accuracy_score(yTest,ypred),3)
+    #calcul de l'accuracy 
+    acc = round(metrics.accuracy_score(yTest,ypred),3)
     
     #récupération des labels des classes 
     catego=lda.classes_
@@ -1446,7 +1446,7 @@ def calcul_adl(df,vcible,variables):
     #on récupère les deux graphiques 
     fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores,catego)
     
-    return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
+    return mc, acc,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
 
 
 #Calcul de l'ADL avec les paramètres manuels 
@@ -1470,7 +1470,7 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     lda.fit(XTrain,yTrain)
     
     #validation croisée 
-    scores = cross_val_score(lda, X, y, cv=5)
+    scores = cross_val_score(lda, X, y, cv=5,scoring='accuracy')
     score_moyen = round(np.mean(scores),3)
    
     done = time()
@@ -1485,8 +1485,8 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     #calcul des métriques par classe 
     met= metrics.classification_report(yTest,ypred,output_dict=True)
     met2= metrics.classification_report(yTest,ypred)
-    #calcul du taux d'erreur 
-    err = round(1-metrics.accuracy_score(yTest,ypred),3)
+    #calcul due l'accuracy
+    acc = round(metrics.accuracy_score(yTest,ypred),3)
     
     #récupération des labels des classes 
     catego=lda.classes_
@@ -1498,7 +1498,7 @@ def calcul_adl_manuel(df,vcible,variables,psolver,pshr):
     fig_ROC,fig_thresh = courbe_roc_adl(yTest,y_pred_proba,y_scores,catego)
     
     
-    return mc, err,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
+    return mc, acc,catego,met,met2,score_moyen,tps,fig_ROC,fig_thresh
 
 #Fonction pour créer les graphiques associés à la courbe ROC pour l'ADL 
 def courbe_roc_adl (yTest,y_pred_proba,y_scores,catego):
@@ -1576,15 +1576,15 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                 #Choix manuel des paramètres 
                  if radio == "manu": 
                      if solver=="svd":
-                        table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,None)
+                        table,acc,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,None)
                      elif solver in ["lsqr","eigen"] and shr in ["None","auto"]:
-                            table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,shr)
+                            table,acc,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl_manuel(df, vcible, variables,solver,shr)
                      else:
-                        table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
+                        table,acc,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
                     
                 #Choix automatique des paramètres 
                  else :
-                    table,err,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
+                    table,acc,catego,met,met2,score_moyen,tps,yscore,ft =calcul_adl(df, vcible, variables)
              
                 #récupération de la précision et du rappel par classe dans un vecteur : pour l'affichage graphique 
                 met_classe=[]
@@ -1621,9 +1621,9 @@ def update_sortie_adl(variables,vcible,solver,shr,radio,contents,value2,filename
                 figu=html.Div(children=[
                     html.H5("Temps de calcul : "+str(tps)),
                 
-                    html.H6("Score moyen : "+str(score_moyen)),
+                    html.H6("Accuracy/Précision moyenne : "+str(score_moyen)),
                 
-                    "Taux d'erreur : ",str(err),
+                    "Accuracy/Précision : ",str(acc),
                 
                     dash_table.DataTable(id='testmetadl',
                                      #title= f'Evaluation(Taux d''erreur={acc})',
