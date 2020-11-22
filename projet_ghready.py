@@ -752,7 +752,7 @@ def lin(df,value,variables):
     linear_cv.fit(X_train,y_train)
     end=time()
     y_pre=linear_cv.best_estimator_.predict(X)
-    dict={'valeur reel':y, 'valeur predict': y_pre}
+    dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
     score=r2_score(y_test, linear_cv.best_estimator_.predict(X_test))
     done=round(end-start,3)
@@ -776,7 +776,7 @@ def lin_bis(df,value,variables,para):
     linear_cv.fit(X_train,y_train)
     end=time()
     y_pre=linear_cv.best_estimator_.predict(X)
-    dict={'valeur reel':y, 'valeur predict': y_pre}
+    dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
     score=r2_score(y_test, linear_cv.best_estimator_.predict(X_test))
     done=round(end-start,3)
@@ -807,7 +807,7 @@ def gradient(df,value,variables):
     gb_cv.fit(X_train,y_train)
     end=time()
     y_pre=gb_cv.best_estimator_.predict(X)
-    dict={'valeur reel':y, 'valeur predict': y_pre}
+    dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
     done=round(end-start,3)
     score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
@@ -836,7 +836,7 @@ def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
     gb_cv.fit(X_train,y_train)
     end=time()
     y_pre=gb_cv.best_estimator_.predict(X)
-    dict={'valeur reel':y, 'valeur predict': y_pre}
+    dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
     done=round(end-start,3)
     score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
@@ -879,7 +879,7 @@ def dtr_continue(df,value, variables):
     end=time()
     acc=r2_score(y_test, dt_cv.best_estimator_.predict(X_test))
     y_pre=dt_cv.best_estimator_.predict(X)
-    dict={'valeur reel':y, 'valeur predict': y_pre}
+    dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     done=round(end-start,3)
     data_frame=pd.DataFrame(dict)
     return [acc, data_frame, done]
@@ -903,7 +903,7 @@ def dtr_continue_params(df,value, variables,para1,para2,para3):
     end=time()
     acc=r2_score(y_test, dt_cv.best_estimator_.predict(X_test))
     y_pre=dt_cv.best_estimator_.predict(X)
-    dict={'valeur reel':y, 'valeur predict': y_pre}
+    dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     done=round(end-start,3)
     data_frame=pd.DataFrame(dict)
     return [acc, data_frame, done]
@@ -1673,13 +1673,13 @@ def update_output_dtr_graph(value1,params,para1,para2,para3,variables,contents,v
                     if params:
                         if params=='Paramètres optimaux':
                             data_frame=dtr_continue(df, value1, variables)[1]
-                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Decision tree Regressor"))])
                         if params=='Paramètres manuels':
                             if para1:
                                 if para2:
                                     if para3:
                                          data_frame=dtr_continue_params(df, value1, variables,para1,para2,para3)[1]
-                                         figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="Decision tree Regressor"))])
+                                         figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="Decision tree Regressor"))])
                             
     return figu
 
@@ -1733,7 +1733,7 @@ def update_graph_Boosting(value1,variables,params,para1,para2,para3,para4,para5,
                     if params:
                         if params=='Paramètres optimaux':
                             data_frame=gradient(df, value1, variables)[1]
-                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
+                            figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="SGB"))])
                         if params=='Paramètres manuels':
                             if para1:
                                 if para2:
@@ -1741,7 +1741,7 @@ def update_graph_Boosting(value1,variables,params,para1,para2,para3,para4,para5,
                                         if para4:
                                             if para5:
                                                 data_frame=gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[1]
-                                                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="valeur reel", y="valeur predict", title="SGB"))])
+                                                figu=html.Div(children=[dcc.Graph(id='fig', figure=px.scatter(data_frame, x="Valeur réelle", y="Valeur prédite", title="SGB"))])
     return figu
 
 
