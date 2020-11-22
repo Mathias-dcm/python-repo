@@ -754,6 +754,7 @@ def lin(df,value,variables):
     dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
     score=r2_score(y_test, linear_cv.best_estimator_.predict(X_test))
+    
     done=round(end-start,3)
     return [score, data_frame, done]
     
@@ -777,9 +778,10 @@ def lin_bis(df,value,variables,para):
     y_pre=linear_cv.best_estimator_.predict(X)
     dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
-    score=r2_score(y_test, linear_cv.best_estimator_.predict(X_test))
+    score=round(r2_score(y_test, linear_cv.best_estimator_.predict(X_test)),3)
+    score_mean=round(linear_cv.cv_results_['mean_test_score' ][0],3)
     done=round(end-start,3)
-    return [score, data_frame, done]
+    return [score, data_frame, done, score_mean]
 
 
 
@@ -809,7 +811,8 @@ def gradient(df,value,variables):
     dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     data_frame=pd.DataFrame(dict)
     done=round(end-start,3)
-    score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
+    score=round(r2_score(y_test, gb_cv.best_estimator_.predict(X_test)),3)
+    
     return [score, data_frame, done]
     
     
@@ -839,7 +842,8 @@ def gradient_bis(df,value,variables,para1,para2,para3,para4,para5):
     data_frame=pd.DataFrame(dict)
     done=round(end-start,3)
     score=r2_score(y_test, gb_cv.best_estimator_.predict(X_test))
-    return [score, data_frame, done]
+    score_mean=round(gb_cv.cv_results_['mean_test_score' ][0],3)
+    return [score, data_frame, done, score_mean]
     
     
    
@@ -900,12 +904,13 @@ def dtr_continue_params(df,value, variables,para1,para2,para3):
     dt_cv=GridSearchCV(dt, params, cv=5, scoring=scoring, n_jobs=-1)
     dt_cv.fit(X_train,y_train)
     end=time()
-    acc=r2_score(y_test, dt_cv.best_estimator_.predict(X_test))
+    acc=round(r2_score(y_test, dt_cv.best_estimator_.predict(X_test)),3)
+    acc_mean=round(dt_cv.cv_results_['mean_test_score' ][0],3)
     y_pre=dt_cv.best_estimator_.predict(X)
     dict={'Valeur réelle':y, 'Valeur prédite': y_pre}
     done=round(end-start,3)
     data_frame=pd.DataFrame(dict)
-    return [acc, data_frame, done]
+    return [acc, data_frame, done, acc_mean]
 
 
 ##############################################################################
@@ -1020,7 +1025,7 @@ def update_result_regression(value1,para,variables,contents,value2,filename):
                         if para=="Le meilleur paramètre":
                             children=html.Div([html.Div( ["Temps de calcul = ", str(lin(df,value1, variables)[2])]),html.Div(["R square of Regression =",  str(lin(df,value1, variables)[0])])])
                         else:
-                            children=html.Div([html.Div( ["Temps de calcul = ", str(lin_bis(df,value1, variables,para)[2])]),html.Div(["R square of Regression =",  str(lin_bis(df,value1, variables,para)[0])])])
+                            children=html.Div([html.Div( ["Temps de calcul = ", str(lin_bis(df,value1, variables,para)[2])]),html.Div(["R square mean of Regression =",  str(lin_bis(df,value1, variables,para)[3])]), html.Div(["R square of Regression =",  str(lin_bis(df,value1, variables,para)[0])])])
      
     return children 
 
@@ -1130,7 +1135,7 @@ def update_output_dtr(value1,variables,params, para1,para2,para3,contents,value2
                             if para1:
                                 if para2:
                                     if para3:
-                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[0])])]) 
+                                         children=html.Div([html.Div(["Temps de calcul =", str(dtr_continue_params(df, value1, variables, para1,para2,para3)[2])]), html.Div([ "R square mean of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[3])]), html.Div([ "R square of Decision Tree Regressor =",  str(dtr_continue_params(df, value1, variables,para1,para2,para3)[0])])]) 
                                
      
     return children
@@ -1166,7 +1171,7 @@ def update_result_Boosting(value1,variables,params,para1,para2,para3,para4,para5
                                     if para3:
                                         if para4:
                                             if para5:
-                                                children=html.Div([html.Div(["Temps de calcul =", str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[2])]), html.Div(["R square of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[0])])]) 
+                                                children=html.Div([html.Div(["Temps de calcul =", str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[2])]),html.Div(["R square mean of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[3])]), html.Div(["R square of Gradient boosting =",  str(gradient_bis(df, value1, variables,para1,para2,para3,para4,para5)[0])])]) 
                                
      
     return children
