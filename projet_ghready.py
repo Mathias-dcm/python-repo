@@ -1220,14 +1220,7 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                  'max_iter' : [100, 1000,2500, 5000]
                                  }
                                 ]
-#                                else:
-#                                    param_grid = [    
-#                                {'penalty' : ['l1', 'l2', 'elasticnet', 'none'],
-#                                 'C' : [para1],
-#                                 'solver' : ['lbfgs','newton-cg'],
-#                                 'max_iter' : [100, 1000,2500, 5000]
-#                                 }
-#                                ]
+#                                
                             
                         if  para=='Paramètres optimaux':
                             param_grid = [    
@@ -1249,14 +1242,15 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                             logreg = LogisticRegression(multi_class="multinomial")
                     
                             #Hyperparametre
-                            clf = GridSearchCV(logreg, param_grid = param_grid, cv = 3, verbose=True, n_jobs=-1)
+                            clf = GridSearchCV(logreg, param_grid = param_grid, cv = 3, verbose=True, n_jobs=-1, scoring='accuracy')
                     
                             clf.fit(X_train,y_train)
                             acc=accuracy_score(y_test, clf.best_estimator_.predict(X_test))
+                            acc=round(acc,3)
                             y_pred=clf.best_estimator_.predict(X_test)
                             y_pred_proba = clf.best_estimator_.predict_proba(X_test)[::,1]
                             y_scores=clf.best_estimator_.predict_proba(X_test)
-                            score=clf.best_score_
+                            score=round(clf.best_score_,3)
                     
                             #score=r2_score(y_test,clf.best_estimator_.predict(X_test))
                     
@@ -1278,18 +1272,18 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                     
                    
                     
-                            if y_scores.shape[1]>2:
-                                y_scores=clf.best_estimator_.predict_proba(X_test)
-                                y_onehot = pd.get_dummies(y_test, columns=clf.best_estimator_.classes_)
+                            
+                            y_scores=clf.best_estimator_.predict_proba(X_test)
+                            y_onehot = pd.get_dummies(y_test, columns=clf.best_estimator_.classes_)
                     # Create an empty figure, and iteratively add new lines
                     # every time we compute a new class 
-                                fig_ROC = go.Figure()
-                                fig_ROC.add_shape(
+                            fig_ROC = go.Figure()
+                            fig_ROC.add_shape(
                                     type='line', line=dict(dash='dash'),
                                     x0=0, x1=1, y0=0, y1=1
                                     )       
                     
-                                for i in range(y_scores.shape[1]):
+                            for i in range(y_scores.shape[1]):
                                     y_true = y_onehot.iloc[:, i]
                                     y_score = y_scores[:, i]
 
@@ -1306,53 +1300,40 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                         xaxis=dict(constrain='domain'),
                                         width=700, height=500
                                         )
-                                    fig_thresh=go.Figure()
-                            else:
+                            fig_thresh=go.Figure()
+                            if y_scores.shape[1]==2:
+                                catego=clf.classes_
+                                classe_posit = catego[[1]]
                                 auc = metrics.roc_auc_score(y_test, y_pred_proba)
-                                fpr, tpr, thresholds = metrics.roc_curve(y_test,  y_pred_proba)
+                                fpr, tpr, thresholds = metrics.roc_curve(y_test,  y_pred_proba,pos_label=classe_posit)
                                 df1 = pd.DataFrame({
                                         'Taux de Faux Positif': fpr,
                                         'Taux de Vrai Positf': tpr
                                         }, index=thresholds)
                                 df1.index.name = "Seuil"
                                 df1.columns.name = "Rate"
-                                fig_ROC = px.area(
-                                            x=fpr, y=tpr,
-                                            title=f'Courbe de ROC (AUC={auc})',
-                                            labels=dict(x='False Positive Rate', y='True Positive Rate'),
-                                            width=500, height=500
-                                            ) 
-                                fig_ROC.add_shape(
-                                type='line', line=dict(dash='dash'),
-                                x0=0, x1=1, y0=0, y1=1
-                              )
                                 fig_thresh = px.line(
-                                    df1, title='Taux de TP et Taux de FP à chaque seuil',
+                                    df1, title='Taux de TP et Taux de FP à chaque seuil- Positifs : '+str(classe_posit),
                                     width=700, height=500
                                     )
                                 fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
                                 fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
-                         
-                          
+                                
                             indice=metrics.classification_report(y_test,y_pred)
                             indice=report_to_df(indice)
                             fig_hist = px.histogram(
-                                            x=y_pred_proba, color=y_test, nbins=50,
+                                            x=y_pred_proba, 
+                                            title="Distribution des scores bons et des scores mauvais",
+                                            color=y_test, nbins=50,
                                             labels=dict(color='True Labels', x='Score')
                                             )
                     #Matrice de confusion
-                            """
-                            fig_matcon=plt.figure()
-                            fig_matcon.add_subplot(111)
-                            sn.heatmap(cnf_matrix,annot=True,square=True,cbar=False,fmt="d")
-                            plt.xlabel("predicted")
-                            plt.ylabel("true")
-                            """
                             catego=clf.classes_
                     #fig_matcon=ff.create_annotated_heatmap(cnf_matrix)
                             fig_matcon=px.imshow(cnf_matrix,labels=dict(x="Prédiction", y="Observation", color="Nombre d'individus"),x=catego,y=catego,color_continuous_scale="Tealgrn",title="Matrice de confusion")
                             end=time()
                             duration=(end-start)
+                            duration=round(duration,3)
                             return html.Div([
                                 
                                   html.H2(
@@ -1361,11 +1342,11 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                                        'textAlign': 'center',
                                                        'color': colors['text']
                                                        }),
-                                  html.Div(children=f"Score = {score}", style={
+                                  html.Div(children=f" Accuracy Moyenne Cross Validation = {score}", style={
                                                       'textAlign': 'center',
                                                       'color': colors['text']
                                                       }),
-                                   html.Div(children=f"Taux d'erreur = {1-acc}", style={
+                                   html.Div(children=f"Accuracy de modèle = {acc}", style={
                                                        'textAlign': 'center',
                                                        'color': colors['text']
                                                        }),
@@ -1378,7 +1359,7 @@ def update_output_RL(variables,para,para1,para2,vcible,contents,value2,filename)
                                     html.Div([dcc.Graph(id='MaCo', figure=fig_matcon)]),
                                     html.Div([dcc.Graph(id='ROC', figure=fig_ROC),
                                               dcc.Graph(id='Thresh', figure=fig_thresh)
-                                              ],style={'columnCount': 2}),
+                                              ]),
                                     html.Div([dcc.Graph(id='Hist', figure=fig_hist)]),
                                     ])
 
@@ -1752,9 +1733,7 @@ def update_graph_Boosting(value1,variables,params,para1,para2,para3,para4,para5,
               [Input('predire','value')],[Input('cible', 'value')], [Input('pre_algo', 'children')], [Input('upload-data', 'contents')],
               [State('upload-data', 'filename')])
 
-
 def update_graph_PCA(variables,value1,value2,contents,filename):
-
     figu=html.Div()
     if contents:
         contents=contents[0]
@@ -2172,12 +2151,6 @@ def options_solver_adl(radio):
 
 @app.callback(Output('algo', 'value'), [Input('algo', 'options')])
 def callback13(value):
-    return ""
-
-
-
-@app.callback(Output('parameter', 'value'), [Input('parameter', 'options')])
-def callback14(value):
     return ""
 
 
