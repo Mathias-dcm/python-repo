@@ -2208,6 +2208,35 @@ def reset_param_adl(value):
     if value:
         return ""
 
+#Quand on change de fichier : on décoche le choix des hyper-paramètres pour le dtc
+@app.callback(Output('radio_dtc','value'),[Input('upload-data', 'filename')])
+def reset_param_dtc(value):
+    if value:
+        return ""
+    
+#Quand on change de fichier : on décoche le choix des hyper-paramètres pour le dtr
+@app.callback(Output('radio_dtr','value'),[Input('upload-data', 'filename')])
+def reset_param_dtr(value):
+    if value:
+        return ""
+    
+#Quand on change de fichier : on décoche le choix des hyper-paramètres pour le sgb
+@app.callback(Output('radio_sgb','value'),[Input('upload-data', 'filename')])
+def reset_param_sgb(value):
+    if value:
+        return ""  
+
+#Quand on change de fichier : on décoche le choix des hyper-paramètres pour la reg log
+@app.callback(Output('radio_reglog','value'),[Input('upload-data', 'filename')])
+def reset_param_reglog(value):
+    if value:
+        return ""
+
+#Quand on change de fichier : on décoche le choix des hyper-paramètres pour la reg lin
+@app.callback(Output('parameter','value'),[Input('upload-data', 'filename')])
+def reset_param_reglin(value):
+    if value:
+        return ""
 
 
 
