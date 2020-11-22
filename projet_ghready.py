@@ -966,10 +966,10 @@ def dtc_continue_params(df,value,variables,para1,para2,para3):
     df_bis=df.loc[:,variables]
     X=pd.get_dummies(df_bis)
     y=df[str(value)]
-    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2, scoring='accuracy')
+    X_train,X_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=2)
     dt = DecisionTreeClassifier()
     start = time()
-    dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1)
+    dt_cv=GridSearchCV(dt, params, cv=5, n_jobs=-1, scoring='accuracy')
     dt_cv.fit(X_train,y_train)
     accuracy_moyenne=round(dt_cv.best_score_,3)
     y_pre=dt_cv.best_estimator_.predict(X_test) 
